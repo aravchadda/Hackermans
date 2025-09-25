@@ -37,7 +37,7 @@ const YourEmbeddingTableauStyleApp = (props) => {
                 </div>
             </div>
 
-            <div className="h-[calc(100vh-80px)] overflow-hidden">
+            <div className=" overflow-hidden">
                 {viewMode === 'walker' ? (
                     <GraphicWalker
                         dataSource={dataSource}
