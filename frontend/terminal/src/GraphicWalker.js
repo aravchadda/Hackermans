@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import ChartRenderer from './ChartRenderer';
+import { useTheme } from './ThemeContext';
 
 // Professional GraphicWalker component with Kanaries-style design
 const GraphicWalker = ({ 
@@ -16,6 +17,7 @@ const GraphicWalker = ({
     const [isLoading, setIsLoading] = useState(false);
     const [activeTab, setActiveTab] = useState('fields');
     const [draggedField, setDraggedField] = useState(null);
+    const { isDark } = useTheme();
 
     // Process data based on selected fields
     const processedData = useMemo(() => {
@@ -133,18 +135,18 @@ const GraphicWalker = ({
     };
 
     return (
-        <div className="flex flex-col h-full bg-slate-50">
+        <div className="flex flex-col h-full bg-slate-50 dark:bg-slate-900 overflow-hidden transition-colors">
             {/* Header */}
-            <div className="flex justify-between items-center px-6 py-5 bg-white border-b border-slate-200 shadow-sm">
+            <div className="flex justify-between items-center px-6 py-5 bg-white dark:bg-slate-800 border-b border-slate-200 dark:border-slate-700 shadow-sm">
                 <div>
-                    <h2 className="text-2xl font-semibold text-slate-800">Graphic Walker</h2>
-                    <p className="text-slate-600 text-sm">Interactive Data Visualization</p>
+                    <h2 className="text-2xl font-semibold text-slate-800 dark:text-slate-100">Graphic Walker</h2>
+                    <p className="text-slate-600 dark:text-slate-400 text-sm">Interactive Data Visualization</p>
                 </div>
                 <div className="flex gap-4">
-                    <span className="px-3 py-1 bg-slate-100 rounded-full text-xs font-medium text-slate-600">
+                    <span className="px-3 py-1 bg-slate-100 dark:bg-slate-700 rounded-full text-xs font-medium text-slate-600 dark:text-slate-300">
                         {dataSource.length} records
                     </span>
-                    <span className="px-3 py-1 bg-slate-100 rounded-full text-xs font-medium text-slate-600">
+                    <span className="px-3 py-1 bg-slate-100 dark:bg-slate-700 rounded-full text-xs font-medium text-slate-600 dark:text-slate-300">
                         {rawFields.length} fields
                     </span>
                 </div>
@@ -153,13 +155,13 @@ const GraphicWalker = ({
             {/* Main Layout */}
             <div className="flex flex-1 overflow-hidden">
                 {/* Left Sidebar */}
-                <div className="w-80 bg-white border-r border-slate-200 flex flex-col">
-                    <div className="flex border-b border-slate-200">
+                <div className="w-80 bg-white dark:bg-slate-800 border-r border-slate-200 dark:border-slate-700 flex flex-col">
+                    <div className="flex border-b border-slate-200 dark:border-slate-700">
                         <button 
                             className={`flex-1 px-4 py-3 text-sm font-medium transition-all ${
                                 activeTab === 'fields' 
-                                    ? 'text-blue-600 border-b-2 border-blue-600 bg-blue-50' 
-                                    : 'text-slate-500 hover:text-slate-700 hover:bg-slate-50'
+                                    ? 'text-blue-600 border-b-2 border-blue-600 bg-blue-50 dark:bg-blue-900/20' 
+                                    : 'text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-700'
                             }`}
                             onClick={() => setActiveTab('fields')}
                         >
@@ -168,8 +170,8 @@ const GraphicWalker = ({
                         <button 
                             className={`flex-1 px-4 py-3 text-sm font-medium transition-all ${
                                 activeTab === 'filters' 
-                                    ? 'text-blue-600 border-b-2 border-blue-600 bg-blue-50' 
-                                    : 'text-slate-500 hover:text-slate-700 hover:bg-slate-50'
+                                    ? 'text-blue-600 border-b-2 border-blue-600 bg-blue-50 dark:bg-blue-900/20' 
+                                    : 'text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-700'
                             }`}
                             onClick={() => setActiveTab('filters')}
                         >
@@ -178,8 +180,8 @@ const GraphicWalker = ({
                         <button 
                             className={`flex-1 px-4 py-3 text-sm font-medium transition-all ${
                                 activeTab === 'settings' 
-                                    ? 'text-blue-600 border-b-2 border-blue-600 bg-blue-50' 
-                                    : 'text-slate-500 hover:text-slate-700 hover:bg-slate-50'
+                                    ? 'text-blue-600 border-b-2 border-blue-600 bg-blue-50 dark:bg-blue-900/20' 
+                                    : 'text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-700'
                             }`}
                             onClick={() => setActiveTab('settings')}
                         >

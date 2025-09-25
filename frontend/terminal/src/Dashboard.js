@@ -7,19 +7,19 @@ import { sampleDataSource } from './sampleData';
 
 const Dashboard = () => {
     return (
-        <div className="p-5 bg-slate-50 min-h-screen">
-            <div className="text-center mb-8 p-5 bg-white rounded-xl shadow-sm">
-                <h1 className="text-3xl font-bold text-slate-800 mb-2">📊 Data Analytics Dashboard</h1>
-                <p className="text-slate-600">Interactive charts and visualizations</p>
+        <div className="p-5 bg-slate-50 dark:bg-slate-900 min-h-screen transition-colors">
+            <div className="text-center mb-8 p-5 bg-white dark:bg-slate-800 rounded-xl shadow-sm">
+                <h1 className="text-3xl font-bold text-slate-800 dark:text-slate-100 mb-2">📊 Data Analytics Dashboard</h1>
+                <p className="text-slate-600 dark:text-slate-400">Interactive charts and visualizations</p>
             </div>
 
             <div className="flex flex-col gap-5">
                 {/* Row 1: Bar Chart and Line Chart */}
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
-                    <div className="bg-white rounded-xl shadow-sm overflow-hidden transition-all hover:-translate-y-1 hover:shadow-lg">
-                        <div className="px-6 py-5 border-b border-slate-200 bg-slate-50">
-                            <h3 className="text-lg font-semibold text-slate-800 mb-1">📊 Salary by Department</h3>
-                            <p className="text-slate-600 text-sm">Average salary distribution across departments</p>
+                    <div className="bg-white dark:bg-slate-800 rounded-xl shadow-sm overflow-hidden transition-all hover:-translate-y-1 hover:shadow-lg">
+                        <div className="px-6 py-5 border-b border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-700">
+                            <h3 className="text-lg font-semibold text-slate-800 dark:text-slate-100 mb-1">📊 Salary by Department</h3>
+                            <p className="text-slate-600 dark:text-slate-400 text-sm">Average salary distribution across departments</p>
                         </div>
                         <div className="p-5">
                             <BarChart 

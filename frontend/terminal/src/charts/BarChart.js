@@ -65,7 +65,7 @@ const BarChart = ({
 
     if (!chartData) {
         return (
-            <div className="flex items-center justify-center text-slate-500" style={{ height }}>
+            <div className="flex items-center justify-center text-slate-500 dark:text-slate-400" style={{ height }}>
                 <p>No data available</p>
             </div>
         );
