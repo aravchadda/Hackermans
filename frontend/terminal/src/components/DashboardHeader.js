@@ -1,6 +1,6 @@
 import React from 'react';
 
-const DashboardHeader = ({ mode, onModeChange }) => {
+const DashboardHeader = ({ mode, onModeChange, showChat, onToggleChat }) => {
   return (
     <header className="h-16 bg-dashboard-surface border-b border-dashboard-border flex items-center justify-between px-6 shadow-sm">
       <div className="flex items-center gap-4">
@@ -40,6 +40,18 @@ const DashboardHeader = ({ mode, onModeChange }) => {
             View
           </button>
         </div>
+        
+        <button 
+          onClick={onToggleChat}
+          className={`h-8 px-3 text-sm font-medium border border-border rounded-md hover:bg-muted transition-smooth flex items-center gap-1.5 ${
+            showChat ? 'bg-blue-50 text-blue-600 border-blue-200' : ''
+          }`}
+        >
+          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
+          </svg>
+          Chat
+        </button>
         
         <button className="h-8 px-3 text-sm font-medium border border-border rounded-md hover:bg-muted transition-smooth flex items-center gap-1.5">
           <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">

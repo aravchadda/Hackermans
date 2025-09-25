@@ -39,6 +39,7 @@ const DashboardCanvas = ({ mode }) => {
   const [items, setItems] = useState([]);
   const [dragOver, setDragOver] = useState(false);
   const [editingItem, setEditingItem] = useState(null);
+  const [fullscreenItem, setFullscreenItem] = useState(null);
 
   // Get available fields for configuration
   const getAvailableFields = () => {
@@ -50,47 +51,61 @@ const DashboardCanvas = ({ mode }) => {
 
   // Handle chart configuration updates
   const handleItemConfig = (itemId, config) => {
-    setItems(items.map(item => 
-      item.id === itemId 
-        ? { ...item, config: { ...item.config, ...config } }
-        : item
-    ));
+    setItems(prev => 
+      prev.map(item => 
+        item.id === itemId 
+          ? { 
+              ...item, 
+              config: { ...item.config, ...config },
+              // Update item height when config height changes
+              ...(config.height && { height: config.height })
+            }
+          : item
+      )
+    );
   };
 
-  // Calculate next available position to avoid overlaps
-  const getNextPosition = () => {
-    const gridSize = 320; // Width + margin
-    const rowHeight = 220; // Height + margin
-    const cols = Math.floor(1200 / gridSize); // Approximate columns based on container width
+
+  // Simple height calculation - no complex logic
+  const getDynamicHeight = () => {
+    const baseHeight = 200;
+    const minHeight = 150;
     
-    const row = Math.floor(items.length / cols);
-    const col = items.length % cols;
-    
+    // Simple adjustment based on number of items
+    if (items.length <= 2) return Math.max(minHeight, baseHeight + 50);
+    if (items.length <= 4) return baseHeight;
+    if (items.length <= 6) return Math.max(minHeight, baseHeight - 20);
+    return Math.max(minHeight, baseHeight - 40);
+  };
+
+  // Grid-based layout - no need for position calculation
+  const getGridLayout = () => {
     return {
-      x: col * gridSize + 20, // 20px margin from left
-      y: row * rowHeight + 20  // 20px margin from top
+      display: 'grid',
+      gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))',
+      gap: '20px',
+      padding: '20px',
+      width: '100%',
+      minHeight: 'auto',
+      alignContent: 'start'
     };
   };
+
 
   const handleDrop = (e) => {
     e.preventDefault();
     setDragOver(false);
     
     const chartType = e.dataTransfer.getData("text/plain");
-    const position = getNextPosition();
 
     const newItem = {
       id: `${chartType}-${Date.now()}`,
       type: chartType,
-      x: position.x,
-      y: position.y,
-      width: 300,
-      height: 200,
       config: {
         title: mockData[chartType]?.value || 'New Chart',
         xField: '',
         yField: '',
-        height: 200,
+        height: getDynamicHeight(),
         ...(chartType === 'pie' && { labelField: '', valueField: '' })
       }
     };
@@ -108,33 +123,9 @@ const DashboardCanvas = ({ mode }) => {
   };
 
   const removeItem = (id) => {
-    const updatedItems = items.filter(item => item.id !== id);
-    // Reorganize remaining items to maintain grid layout
-    const reorganizedItems = updatedItems.map((item, index) => {
-      const position = getNextPositionForIndex(index);
-      return {
-        ...item,
-        x: position.x,
-        y: position.y
-      };
-    });
-    setItems(reorganizedItems);
+    setItems(items.filter(item => item.id !== id));
   };
 
-  // Calculate position for a specific index
-  const getNextPositionForIndex = (index) => {
-    const gridSize = 320; // Width + margin
-    const rowHeight = 220; // Height + margin
-    const cols = Math.floor(1200 / gridSize); // Approximate columns based on container width
-    
-    const row = Math.floor(index / cols);
-    const col = index % cols;
-    
-    return {
-      x: col * gridSize + 20, // 20px margin from left
-      y: row * rowHeight + 20  // 20px margin from top
-    };
-  };
 
   const renderChart = (item) => {
     const ChartComponent = chartComponentMap[item.type];
@@ -144,11 +135,11 @@ const DashboardCanvas = ({ mode }) => {
       // Render widget components
       const data = mockData[item.type];
       return (
-        <div className="flex-1 bg-gradient-accent rounded-md flex items-center justify-center">
-          <div className="text-center">
-            <span className="text-3xl mb-2 opacity-40">{iconMap[item.type]}</span>
-            <p className="text-xs text-muted-foreground">{data?.value}</p>
-            <p className="text-xs text-muted-foreground">{data?.subtitle}</p>
+        <div className="flex items-center justify-center h-48 bg-slate-50 dark:bg-slate-700 rounded">
+          <div className="text-center text-slate-500 dark:text-slate-400">
+            <span className="text-4xl mb-2 block">{iconMap[item.type]}</span>
+            <p className="text-sm font-medium">{data?.value}</p>
+            <p className="text-xs">{data?.subtitle}</p>
           </div>
         </div>
       );
@@ -156,10 +147,10 @@ const DashboardCanvas = ({ mode }) => {
 
     if (!xField || !yField) {
       return (
-        <div className="flex-1 bg-gradient-accent rounded-md flex items-center justify-center">
-          <div className="text-center">
-            <span className="text-3xl mb-2 opacity-40">{iconMap[item.type]}</span>
-            <p className="text-xs text-muted-foreground">Configure variables</p>
+        <div className="flex items-center justify-center h-48 bg-slate-50 dark:bg-slate-700 rounded">
+          <div className="text-center text-slate-500 dark:text-slate-400">
+            <span className="text-4xl mb-2 block">{iconMap[item.type]}</span>
+            <p className="text-sm">Configure variables to see chart</p>
           </div>
         </div>
       );
@@ -170,18 +161,14 @@ const DashboardCanvas = ({ mode }) => {
       xField: xField,
       yField: yField,
       title: title,
-      height: height || 200,
+      height:height, // Account for header and padding
       ...(item.type === 'pie' && {
         labelField: item.config.labelField || xField,
         valueField: item.config.valueField || yField
       })
     };
 
-    return (
-      <div className="flex-1 bg-gradient-accent rounded-md p-2">
-        <ChartComponent {...chartProps} />
-      </div>
-    );
+    return <ChartComponent {...chartProps} />;
   };
 
   const renderItem = (item) => {
@@ -191,133 +178,122 @@ const DashboardCanvas = ({ mode }) => {
     return (
       <div
         key={item.id}
-        className={`absolute bg-dashboard-surface border border-dashboard-border shadow-md transition-smooth rounded-lg ${
-          mode === "design" ? "cursor-move hover:shadow-lg" : ""
+        className={`bg-white dark:bg-slate-800 rounded-lg shadow-sm border border-slate-200 dark:border-slate-700 flex flex-col ${
+          mode === "design" ? "cursor-move hover:shadow-lg" : "cursor-pointer hover:shadow-lg"
         }`}
         style={{
-          left: item.x,
-          top: item.y,
-          width: item.width,
-          height: item.height,
+          minHeight: getDynamicHeight(),
         }}
+        onClick={() => mode === "view" && setFullscreenItem(item)}
       >
-        <div className="p-4 h-full flex flex-col">
-          <div className="flex items-center justify-between mb-3">
-            <div className="flex items-center gap-2">
-              <div className="w-6 h-6 bg-gradient-primary rounded flex items-center justify-center">
-                <span className="text-primary-foreground text-xs">{icon}</span>
-              </div>
-              <div>
-                <h3 className="text-sm font-medium text-foreground">{item.config.title || data?.value}</h3>
-                <p className="text-xs text-muted-foreground">{data?.subtitle}</p>
-              </div>
-            </div>
-            {mode === "design" && (
-              <div className="flex gap-1">
-                <button 
-                  onClick={() => setEditingItem(editingItem === item.id ? null : item.id)}
-                  className="h-6 w-6 p-0 opacity-60 hover:opacity-100 flex items-center justify-center rounded hover:bg-muted transition-smooth"
-                >
-                  <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                  </svg>
-                </button>
-                <button
-                  onClick={() => removeItem(item.id)}
-                  className="h-6 w-6 p-0 opacity-60 hover:opacity-100 hover:text-destructive flex items-center justify-center rounded hover:bg-muted transition-smooth"
-                >
-                  <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                  </svg>
-                </button>
-              </div>
-            )}
+        {/* Chart Header */}
+        <div className="flex items-center justify-between p-3 bg-slate-50 dark:bg-slate-700 border-b border-slate-200 dark:border-slate-600">
+          <div className="flex items-center gap-2 ">
+            <span className="text-lg">{icon}</span>
+            <span className="text-sm font-medium text-slate-700 dark:text-slate-200">{item.config.title || data?.value}</span>
           </div>
-          
-          {renderChart(item)}
-          
-          {/* Configuration Panel */}
-          {editingItem === item.id && mode === "design" && (
-            <div className="border-t border-dashboard-border p-3 bg-muted/50">
-              <h4 className="text-xs font-medium text-foreground mb-2">Chart Configuration</h4>
-              
-              <div className="space-y-2">
-                <div>
-                  <label className="block text-xs font-medium text-muted-foreground mb-1">Title</label>
-                  <input
-                    type="text"
-                    value={item.config.title}
-                    onChange={(e) => handleItemConfig(item.id, { title: e.target.value })}
-                    className="w-full px-2 py-1 text-xs border border-input rounded focus:outline-none focus:ring-1 focus:ring-ring bg-background text-foreground"
-                  />
-                </div>
-
-                {chartComponentMap[item.type] && (
-                  <>
-                    <div>
-                      <label className="block text-xs font-medium text-muted-foreground mb-1">X-Axis Field</label>
-                      <select
-                        value={item.config.xField}
-                        onChange={(e) => handleItemConfig(item.id, { xField: e.target.value })}
-                        className="w-full px-2 py-1 text-xs border border-input rounded focus:outline-none focus:ring-1 focus:ring-ring bg-background text-foreground"
-                      >
-                        <option value="">Select X-axis field</option>
-                        {getAvailableFields().map(field => (
-                          <option key={field.value} value={field.value}>
-                            {field.label}
-                          </option>
-                        ))}
-                      </select>
-                    </div>
-
-                    <div>
-                      <label className="block text-xs font-medium text-muted-foreground mb-1">Y-Axis Field</label>
-                      <select
-                        value={item.config.yField}
-                        onChange={(e) => handleItemConfig(item.id, { yField: e.target.value })}
-                        className="w-full px-2 py-1 text-xs border border-input rounded focus:outline-none focus:ring-1 focus:ring-ring bg-background text-foreground"
-                      >
-                        <option value="">Select Y-axis field</option>
-                        {getAvailableFields().map(field => (
-                          <option key={field.value} value={field.value}>
-                            {field.label}
-                          </option>
-                        ))}
-                      </select>
-                    </div>
-
-                    <div>
-                      <label className="block text-xs font-medium text-muted-foreground mb-1">Height (px)</label>
-                      <input
-                        type="number"
-                        value={item.config.height}
-                        onChange={(e) => handleItemConfig(item.id, { height: parseInt(e.target.value) || 200 })}
-                        className="w-full px-2 py-1 text-xs border border-input rounded focus:outline-none focus:ring-1 focus:ring-ring bg-background text-foreground"
-                        min="150"
-                        max="400"
-                      />
-                    </div>
-                  </>
-                )}
-              </div>
+          {mode === "design" && (
+            <div className="flex gap-1">
+              <button
+                onClick={() => setEditingItem(editingItem === item.id ? null : item.id)}
+                className="p-1 text-slate-500 dark:text-slate-400 hover:text-blue-600 dark:hover:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded"
+                title="Configure"
+              >
+                ⚙️
+              </button>
+              <button
+                onClick={() => removeItem(item.id)}
+                className="p-1 text-slate-500 dark:text-slate-400 hover:text-red-600 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 rounded"
+                title="Remove"
+              >
+                🗑️
+              </button>
             </div>
           )}
         </div>
+
+        {/* Chart Content */}
+        <div className="p-4 flex-1">
+          {renderChart(item)}
+        </div>
+
+        {/* Configuration Panel */}
+        {mode === "design" && editingItem === item.id && (
+          <div className="border-t border-slate-200 dark:border-slate-600 p-4 bg-slate-50 dark:bg-slate-700">
+            <h4 className="text-sm font-medium text-slate-700 dark:text-slate-200 mb-3">Chart Configuration</h4>
+            
+            <div className="space-y-3">
+              <div>
+                <label className="block text-xs font-medium text-slate-600 dark:text-slate-400 mb-1">Title</label>
+                <input
+                  type="text"
+                  value={item.config.title}
+                  onChange={(e) => handleItemConfig(item.id, { title: e.target.value })}
+                  className="w-full px-2 py-1 text-sm border border-slate-200 dark:border-slate-600 rounded focus:outline-none focus:ring-1 focus:ring-blue-500 bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100"
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-medium text-slate-600 dark:text-slate-400 mb-1">X-Axis Field</label>
+                <select
+                  value={item.config.xField}
+                  onChange={(e) => handleItemConfig(item.id, { xField: e.target.value })}
+                  className="w-full px-2 py-1 text-sm border border-slate-200 dark:border-slate-600 rounded focus:outline-none focus:ring-1 focus:ring-blue-500 bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100"
+                >
+                  <option value="">Select X-axis field</option>
+                  {getAvailableFields().map(field => (
+                    <option key={field.value} value={field.value}>
+                      {field.label}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-xs font-medium text-slate-600 dark:text-slate-400 mb-1">Y-Axis Field</label>
+                <select
+                  value={item.config.yField}
+                  onChange={(e) => handleItemConfig(item.id, { yField: e.target.value })}
+                  className="w-full px-2 py-1 text-sm border border-slate-200 dark:border-slate-600 rounded focus:outline-none focus:ring-1 focus:ring-blue-500 bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100"
+                >
+                  <option value="">Select Y-axis field</option>
+                  {getAvailableFields().map(field => (
+                    <option key={field.value} value={field.value}>
+                      {field.label}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-xs font-medium text-slate-600 dark:text-slate-400 mb-1">Height (px)</label>
+                <input
+                  type="number"
+                  value={item.config.height}
+                  onChange={(e) => handleItemConfig(item.id, { height: parseInt(e.target.value) || 300 })}
+                  className="w-full px-2 py-1 text-sm border border-slate-200 dark:border-slate-600 rounded focus:outline-none focus:ring-1 focus:ring-blue-500 bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100"
+                  min="200"
+                  max="600"
+                />
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     );
   };
 
   return (
-    <main className="flex-1 bg-dashboard-bg overflow-hidden">
+    <main className="flex-1 bg-dashboard-bg overflow-auto min-h-0">
       <div
-        className={`h-full w-full relative transition-smooth ${
+        className={`w-full transition-smooth ${
           dragOver ? "bg-primary/5 border-2 border-dashed border-primary" : ""
         }`}
         onDrop={handleDrop}
         onDragOver={handleDragOver}
         onDragLeave={handleDragLeave}
         style={{
+          ...getGridLayout(),
           backgroundImage: mode === "design" ? `
             linear-gradient(to right, rgba(0,0,0,0.05) 1px, transparent 1px),
             linear-gradient(to bottom, rgba(0,0,0,0.05) 1px, transparent 1px)
@@ -347,25 +323,6 @@ const DashboardCanvas = ({ mode }) => {
         ) : (
           <>
             {items.map(renderItem)}
-            {/* Show next position indicator in design mode */}
-            {mode === "design" && (
-              <div
-                className="absolute border-2 border-dashed border-primary/50 bg-primary/5 rounded-lg flex items-center justify-center"
-                style={{
-                  left: getNextPosition().x,
-                  top: getNextPosition().y,
-                  width: 300,
-                  height: 200,
-                }}
-              >
-                <div className="text-center text-primary/70">
-                  <svg className="w-8 h-8 mx-auto mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
-                  </svg>
-                  <p className="text-xs font-medium">Next position</p>
-                </div>
-              </div>
-            )}
             {dragOver && (
               <div className="absolute inset-0 bg-primary/10 flex items-center justify-center pointer-events-none">
                 <div className="bg-dashboard-surface rounded-lg p-6 shadow-lg border border-primary">
@@ -379,6 +336,44 @@ const DashboardCanvas = ({ mode }) => {
           </>
         )}
       </div>
+
+      {/* Fullscreen Overlay */}
+      {fullscreenItem && (
+        <div className="fixed inset-0 z-50 bg-black bg-opacity-90 flex items-center justify-center p-8">
+          <div className="bg-white dark:bg-slate-800 rounded-lg shadow-2xl w-full h-full max-w-7xl max-h-5xl flex flex-col">
+            {/* Fullscreen Header */}
+            <div className="flex items-center justify-between p-4 border-b border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-700">
+              <div className="flex items-center gap-3">
+                <span className="text-2xl">{iconMap[fullscreenItem.type]}</span>
+                <div>
+                  <h2 className="text-xl font-semibold text-slate-900 dark:text-slate-100">
+                    {fullscreenItem.config.title || mockData[fullscreenItem.type]?.value}
+                  </h2>
+                  <p className="text-sm text-slate-500 dark:text-slate-400">
+                    {mockData[fullscreenItem.type]?.subtitle}
+                  </p>
+                </div>
+              </div>
+              <button
+                onClick={() => setFullscreenItem(null)}
+                className="p-2 text-slate-500 dark:text-slate-400 hover:text-red-600 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors"
+                title="Close Fullscreen"
+              >
+                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+
+            {/* Fullscreen Chart Content */}
+            <div className="flex-1 p-6 overflow-hidden">
+              <div className="w-full h-full">
+                {renderChart(fullscreenItem)}
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </main>
   );
 };

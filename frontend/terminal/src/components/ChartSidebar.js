@@ -4,7 +4,7 @@ const chartTypes = [
   { id: "bar", name: "Bar Chart", icon: "📊", category: "Charts", description: "Compare values across categories" },
   { id: "line", name: "Line Chart", icon: "📈", category: "Charts", description: "Show trends over time" },
   { id: "pie", name: "Pie Chart", icon: "🥧", category: "Charts", description: "Display parts of a whole" },
-  { id: "area", name: "Area Chart", icon: "📊", category: "Charts", description: "Show cumulative data over time" },
+  { id: "area", name: "Area Chart", icon: "📈", category: "Charts", description: "Show cumulative data over time" },
   { id: "activity", name: "Activity Feed", icon: "⚡", category: "Widgets", description: "Real-time activity updates" },
   { id: "kpi", name: "KPI Card", icon: "🎯", category: "Widgets", description: "Key performance indicators" },
   { id: "users", name: "User Stats", icon: "👥", category: "Widgets", description: "User engagement metrics" },

@@ -158,7 +158,7 @@ const DragDropDashboard = () => {
                     {dashboardCharts.length === 0 ? (
                         <div className="flex items-center justify-center h-full border-2 border-dashed border-slate-300 dark:border-slate-600 rounded-lg bg-slate-50 dark:bg-slate-800">
                             <div className="text-center text-slate-500 dark:text-slate-400">
-                                <div className="text-4xl mb-4">📊</div>
+                                <div className="text-4xl mb-4"></div>
                                 <h3 className="text-lg font-medium mb-2">Empty Dashboard</h3>
                                 <p>Drag chart components here to start building</p>
                             </div>
@@ -168,7 +168,7 @@ const DragDropDashboard = () => {
                             {dashboardCharts.map((chart) => (
                                 <div
                                     key={chart.id}
-                                    className="bg-white dark:bg-slate-800 rounded-lg shadow-sm border border-slate-200 dark:border-slate-700 overflow-hidden"
+                                    className="bg-white dark:bg-slate-800 rounded-lg shadow-sm border border-slate-200 dark:border-slate-700 "
                                 >
                                     {/* Chart Header */}
                                     <div className="flex items-center justify-between p-3 bg-slate-50 dark:bg-slate-700 border-b border-slate-200 dark:border-slate-600">

@@ -72,7 +72,7 @@ const BarChart = ({
     }
 
     return (
-        <div style={{ height }}>
+        <div style={{ height, width: '100%' }}>
             <Bar data={chartData} options={options} />
         </div>
     );

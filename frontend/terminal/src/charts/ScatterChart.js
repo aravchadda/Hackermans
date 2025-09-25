@@ -83,7 +83,7 @@ const ScatterChart = ({
     }
 
     return (
-        <div style={{ height }}>
+        <div style={{ height, width: '100%' }}>
             <Scatter data={chartData} options={options} />
         </div>
     );
