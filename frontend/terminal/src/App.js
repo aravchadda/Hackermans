@@ -4,7 +4,7 @@ import Dashboard from './Dashboard';
 import DragDropDashboard from './DragDropDashboard';
 import CreativeDashboard from './CreativeDashboard';
 import LoginPage from './components/LoginPage';
-import { ThemeProvider } from './ThemeContext';
+import { ThemeProvider, useTheme } from './ThemeContext';
 import { AuthProvider, useAuth } from './AuthContext';
 import { graphicWalkerSpec } from './graphicWalkerSpec';
 import langStore from './langStore';
@@ -13,7 +13,9 @@ import { sampleDataSource, sampleFields } from './sampleData';
 const AppContent = (props) => {
     const { dataSource = sampleDataSource, fields = sampleFields } = props;
     const { user, loading, logout, canDesign } = useAuth();
+    const { toggleTheme, isDark } = useTheme();
     const [viewMode, setViewMode] = useState('view'); // 'walker', 'dashboard', 'builder', or 'creative'
+    const [dashboardMode, setDashboardMode] = useState('view'); // 'design' or 'view'
 
     // Force viewers to view mode
     useEffect(() => {
@@ -53,7 +55,17 @@ const AppContent = (props) => {
                         </span>
                     </div>
                     <div className="flex items-center gap-4">
-                      
+                       
+                        
+                        {/* Theme Toggle Button */}
+                        <button
+                            onClick={toggleTheme}
+                            className="px-4 py-2 rounded-lg text-sm font-medium bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-slate-600 hover:bg-slate-200 dark:hover:bg-slate-600 transition-all"
+                            title={`Switch to ${isDark ? 'light' : 'dark'} mode`}
+                        >
+                            {isDark ? '☀️' : '🌙'}
+                        </button>
+                        
                         <button
                             onClick={logout}
                             className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white text-sm font-medium rounded-md transition-colors"
@@ -77,9 +89,9 @@ const AppContent = (props) => {
                 ) : viewMode === 'builder' ? (
                     <DragDropDashboard />
                 ) : viewMode === 'view' ? (
-                    <CreativeDashboard mode="view" userRole={user.role} />
+                    <CreativeDashboard mode={dashboardMode} userRole={user.role} />
                 ) : (
-                    <CreativeDashboard mode="design" userRole={user.role} />
+                    <CreativeDashboard mode={dashboardMode} userRole={user.role} />
                 )}
             </div>
         </div>

@@ -16,6 +16,8 @@ const BarChart = ({
     data, 
     xField, 
     yField, 
+    xFieldLabel,
+    yFieldLabel,
     title = "Bar Chart",
     height = 300,
     showLegend = true 
@@ -29,14 +31,14 @@ const BarChart = ({
         return {
             labels,
             datasets: [{
-                label: yField,
+                label: yFieldLabel || yField,
                 data: values,
                 backgroundColor: 'rgba(54, 162, 235, 0.6)',
                 borderColor: 'rgba(54, 162, 235, 1)',
                 borderWidth: 2
             }]
         };
-    }, [data, xField, yField]);
+    }, [data, xField, yField, yFieldLabel]);
 
     const options = {
         responsive: true,
@@ -55,10 +57,20 @@ const BarChart = ({
         scales: {
             y: {
                 beginAtZero: true,
-                grid: { color: 'rgba(0, 0, 0, 0.1)' }
+                grid: { color: 'rgba(0, 0, 0, 0.1)' },
+                title: {
+                    display: true,
+                    text: yFieldLabel || yField || 'Y Axis',
+                    font: { size: 14, weight: 'bold' }
+                }
             },
             x: {
-                grid: { color: 'rgba(0, 0, 0, 0.1)' }
+                grid: { color: 'rgba(0, 0, 0, 0.1)' },
+                title: {
+                    display: true,
+                    text: xFieldLabel || xField || 'X Axis',
+                    font: { size: 14, weight: 'bold' }
+                }
             }
         }
     };

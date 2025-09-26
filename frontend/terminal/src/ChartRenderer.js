@@ -186,24 +186,36 @@ const ChartRenderer = ({
                     position: 'bottom',
                     title: {
                         display: true,
-                        text: selectedFields[0] || 'X Axis'
+                        text: selectedFields[0] || 'X Axis',
+                        font: { size: 14, weight: 'bold' }
                     }
                 },
                 y: {
                     title: {
                         display: true,
-                        text: selectedFields[1] || 'Y Axis'
+                        text: selectedFields[1] || 'Y Axis',
+                        font: { size: 14, weight: 'bold' }
                     }
                 }
             } : {
                 x: {
                     grid: {
                         color: 'rgba(0, 0, 0, 0.1)'
+                    },
+                    title: {
+                        display: true,
+                        text: selectedFields[0] || 'X Axis',
+                        font: { size: 14, weight: 'bold' }
                     }
                 },
                 y: {
                     grid: {
                         color: 'rgba(0, 0, 0, 0.1)'
+                    },
+                    title: {
+                        display: true,
+                        text: selectedFields[1] || 'Y Axis',
+                        font: { size: 14, weight: 'bold' }
                     }
                 }
             }

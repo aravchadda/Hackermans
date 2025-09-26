@@ -330,11 +330,15 @@ const DashboardCanvas = ({ mode }) => {
       data: data,
       xField: 'x_value',
       yField: 'y_value',
+      xFieldLabel: xField,  // Use actual field name for axis label
+      yFieldLabel: yField,  // Use actual field name for axis label
       title: title,
       height: height,
       ...(item.type === 'pie' && {
         labelField: 'x_value',
-        valueField: 'y_value'
+        valueField: 'y_value',
+        labelFieldLabel: xField,  // Use actual field name for pie chart labels
+        valueFieldLabel: yField   // Use actual field name for pie chart values
       })
     };
 

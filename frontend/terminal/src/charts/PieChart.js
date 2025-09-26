@@ -14,6 +14,8 @@ const PieChart = ({
     data, 
     labelField, 
     valueField, 
+    labelFieldLabel,
+    valueFieldLabel,
     title = "Pie Chart",
     height = 300,
     showLegend = true 

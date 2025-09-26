@@ -18,6 +18,8 @@ const LineChart = ({
     data, 
     xField, 
     yField, 
+    xFieldLabel,
+    yFieldLabel,
     title = "Line Chart",
     height = 300,
     showLegend = true,
@@ -32,7 +34,7 @@ const LineChart = ({
         return {
             labels,
             datasets: [{
-                label: yField,
+                label: yFieldLabel || yField,
                 data: values,
                 borderColor: 'rgba(75, 192, 192, 1)',
                 backgroundColor: fillArea ? 'rgba(75, 192, 192, 0.2)' : 'transparent',
@@ -42,7 +44,7 @@ const LineChart = ({
                 fill: fillArea
             }]
         };
-    }, [data, xField, yField, fillArea]);
+    }, [data, xField, yField, yFieldLabel, fillArea]);
 
     const options = {
         responsive: true,
@@ -61,10 +63,20 @@ const LineChart = ({
         scales: {
             y: {
                 beginAtZero: true,
-                grid: { color: 'rgba(0, 0, 0, 0.1)' }
+                grid: { color: 'rgba(0, 0, 0, 0.1)' },
+                title: {
+                    display: true,
+                    text: yFieldLabel || yField || 'Y Axis',
+                    font: { size: 14, weight: 'bold' }
+                }
             },
             x: {
-                grid: { color: 'rgba(0, 0, 0, 0.1)' }
+                grid: { color: 'rgba(0, 0, 0, 0.1)' },
+                title: {
+                    display: true,
+                    text: xFieldLabel || xField || 'X Axis',
+                    font: { size: 14, weight: 'bold' }
+                }
             }
         }
     };

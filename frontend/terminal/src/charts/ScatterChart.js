@@ -16,6 +16,8 @@ const ScatterChart = ({
     data, 
     xField, 
     yField, 
+    xFieldLabel,
+    yFieldLabel,
     title = "Scatter Plot",
     height = 300,
     showLegend = true 
@@ -30,7 +32,7 @@ const ScatterChart = ({
 
         return {
             datasets: [{
-                label: `${xField} vs ${yField}`,
+                label: `${xFieldLabel || xField} vs ${yFieldLabel || yField}`,
                 data: points,
                 backgroundColor: 'rgba(54, 162, 235, 0.6)',
                 borderColor: 'rgba(54, 162, 235, 1)',
@@ -38,7 +40,7 @@ const ScatterChart = ({
                 pointHoverRadius: 8
             }]
         };
-    }, [data, xField, yField]);
+    }, [data, xField, yField, xFieldLabel, yFieldLabel]);
 
     const options = {
         responsive: true,
@@ -58,10 +60,20 @@ const ScatterChart = ({
             x: {
                 type: 'linear',
                 position: 'bottom',
-                grid: { color: 'rgba(0, 0, 0, 0.1)' }
+                grid: { color: 'rgba(0, 0, 0, 0.1)' },
+                title: {
+                    display: true,
+                    text: xFieldLabel || xField || 'X Axis',
+                    font: { size: 14, weight: 'bold' }
+                }
             },
             y: {
-                grid: { color: 'rgba(0, 0, 0, 0.1)' }
+                grid: { color: 'rgba(0, 0, 0, 0.1)' },
+                title: {
+                    display: true,
+                    text: yFieldLabel || yField || 'Y Axis',
+                    font: { size: 14, weight: 'bold' }
+                }
             }
         }
     };
