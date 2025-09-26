@@ -32,8 +32,9 @@ For delete operations, only plotName and operation are required
 Based on your understanding, assign the size value to "small", "medium", or "large"
 Default to "medium" size and "bar" chart if not specified
 Do not put the same column name for xAxis and yAxis
-Already existing charts are {existing_graphs}
-If the user asks to delete or update a chart, you should put plotName as one of the existing charts only, if none match put the plotName as unknown.
+Already existing chart names are {existing_graphs} exactly.
+If the user asks to delete or update a chart, you should put plotName as one of the existing charts exactly, if none match put the plotName as unknown.
+For update and delete do not deviate from the existing chart names.
 
 JSON template:
 {{

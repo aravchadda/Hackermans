@@ -30,11 +30,14 @@ const CreativeDashboard = ({ mode: initialMode = "view", userRole = "operator" }
 
   const handleUpdateChart = (chartConfig) => {
     // This will be passed to DashboardCanvas to update the chart
-    console.log('Updating chart from chatbot:', chartConfig);
+    console.log('CreativeDashboard: Updating chart from chatbot:', chartConfig);
     
     // Call the global function to update the chart
     if (window.updateChartFromChatbot) {
+      console.log('CreativeDashboard: Calling window.updateChartFromChatbot');
       window.updateChartFromChatbot(chartConfig);
+    } else {
+      console.error('CreativeDashboard: window.updateChartFromChatbot not found!');
     }
   };
 

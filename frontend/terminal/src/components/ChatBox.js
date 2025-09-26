@@ -59,15 +59,27 @@ const ChatBox = ({ isVisible, onClose, onCreateChart, onDeleteChart, onUpdateCha
           // Delete the chart by name
           onDeleteChart(response.plotName);
         } else if (response.operation === 'update' && onUpdateChart) {
-          // Update the chart with new configuration
+          // Update the chart with new configuration (only include provided fields)
           const chartConfig = {
-            plotName: response.plotName,
-            plotType: response.plotType,
-            xAxis: response.xAxis,
-            yAxis: response.yAxis,
-            size: response.size
+            plotName: response.plotName
           };
           
+          // Only add fields that are actually provided in the response
+          if (response.plotType !== undefined && response.plotType !== null) {
+            chartConfig.plotType = response.plotType;
+          }
+          if (response.xAxis !== undefined && response.xAxis !== null) {
+            chartConfig.xAxis = response.xAxis;
+          }
+          if (response.yAxis !== undefined && response.yAxis !== null) {
+            chartConfig.yAxis = response.yAxis;
+          }
+          if (response.size !== undefined && response.size !== null) {
+            chartConfig.size = response.size;
+          }
+          
+          console.log('Calling onUpdateChart with config:', chartConfig);
+          console.log('Fields provided in update:', Object.keys(chartConfig));
           onUpdateChart(chartConfig);
         }
         
@@ -78,18 +90,26 @@ const ChatBox = ({ isVisible, onClose, onCreateChart, onDeleteChart, onUpdateCha
         } else if (response.operation === 'delete') {
           responseText = `I've deleted the chart named "${response.plotName}".`;
         } else if (response.operation === 'update') {
-          // Build update message based on what fields were actually updated
+          // Build update message based on what fields were actually provided and updated
           const updateParts = [];
-          if (response.plotType) updateParts.push(`chart type to ${response.plotType}`);
-          if (response.xAxis && response.yAxis) updateParts.push(`axes to ${response.xAxis} (X) and ${response.yAxis} (Y)`);
-          else if (response.xAxis) updateParts.push(`X-axis to ${response.xAxis}`);
-          else if (response.yAxis) updateParts.push(`Y-axis to ${response.yAxis}`);
-          if (response.size) updateParts.push(`size to ${response.size}`);
+          if (response.plotType !== undefined && response.plotType !== null) {
+            updateParts.push(`chart type to ${response.plotType}`);
+          }
+          if (response.xAxis !== undefined && response.xAxis !== null && response.yAxis !== undefined && response.yAxis !== null) {
+            updateParts.push(`axes to ${response.xAxis} (X) and ${response.yAxis} (Y)`);
+          } else if (response.xAxis !== undefined && response.xAxis !== null) {
+            updateParts.push(`X-axis to ${response.xAxis}`);
+          } else if (response.yAxis !== undefined && response.yAxis !== null) {
+            updateParts.push(`Y-axis to ${response.yAxis}`);
+          }
+          if (response.size !== undefined && response.size !== null) {
+            updateParts.push(`size to ${response.size}`);
+          }
           
           if (updateParts.length > 0) {
             responseText = `I've updated the chart named "${response.plotName}" - changed ${updateParts.join(', ')}.`;
           } else {
-            responseText = `I've updated the chart named "${response.plotName}".`;
+            responseText = `I've updated the chart named "${response.plotName}" (no specific changes requested).`;
           }
         } else {
           responseText = `I've processed your request for the chart named "${response.plotName}".`;

@@ -59,11 +59,45 @@ const DashboardCanvas = ({ mode, onCreateChart, onDeleteChart, onUpdateChart }) 
   const [loading, setLoading] = useState(false);
   const [rangeFilters, setRangeFilters] = useState({});
 
+  // Debug: Log when items array changes
+  useEffect(() => {
+    console.log('DashboardCanvas: Items array updated:', items.length, 'items');
+    console.log('DashboardCanvas: Items content:', items);
+  }, [items]);
+
+  // Function to refresh items from API
+  const refreshItemsFromAPI = async () => {
+    try {
+      console.log('Refreshing items from API...');
+      const response = await fetch('http://localhost:4000/api/layout');
+      if (response.ok) {
+        const data = await response.json();
+        if (data.success && data.layout) {
+          console.log('Items refreshed from API:', data.layout.length, 'items');
+          console.log('API layout data:', data.layout);
+          return data.layout;
+        }
+      }
+      console.log('No layout found in API');
+      return [];
+    } catch (error) {
+      console.error('Error refreshing items from API:', error);
+      return [];
+    }
+  };
+
   // Handle chart creation and deletion from chatbot
   useEffect(() => {
     if (onCreateChart) {
       const handleChartCreation = (chartConfig) => {
         console.log('DashboardCanvas received chart config:', chartConfig);
+        console.log('Creating new chart from chatbot with config:', {
+          id: chartConfig.id,
+          type: chartConfig.type,
+          title: chartConfig.config.title,
+          xField: chartConfig.config.xField,
+          yField: chartConfig.config.yField
+        });
         
         // Create a new chart item
         const newChartItem = {
@@ -74,7 +108,29 @@ const DashboardCanvas = ({ mode, onCreateChart, onDeleteChart, onUpdateChart }) 
         };
         
         // Add the new chart to the items
-        setItems(prevItems => [...prevItems, newChartItem]);
+        setItems(prevItems => {
+          const updatedItems = [...prevItems, newChartItem];
+          
+          // Save the updated layout to the API (always save for chatbot-created charts)
+          layoutService.saveLayout(updatedItems)
+            .then(async () => {
+              console.log('✅ New chart saved to layout API');
+              console.log('✅ Chart will persist in database');
+              
+              // Verify the chart was saved by fetching from API
+              try {
+                const verification = await refreshItemsFromAPI();
+                console.log('✅ Verification: Chart confirmed in API with', verification.length, 'total charts');
+              } catch (error) {
+                console.error('❌ Verification failed:', error);
+              }
+            })
+            .catch(error => {
+              console.error('❌ Error saving new chart to layout API:', error);
+            });
+          
+          return updatedItems;
+        });
         
         // Fetch data for the new chart
         const { xField, yField, type } = chartConfig.config;
@@ -85,9 +141,10 @@ const DashboardCanvas = ({ mode, onCreateChart, onDeleteChart, onUpdateChart }) 
                 ...prev,
                 [chartConfig.id]: data
               }));
+              console.log(`✅ Fetched data for new chart: ${data.length} records`);
             })
             .catch(error => {
-              console.error('Error fetching data for new chart:', error);
+              console.error('❌ Error fetching data for new chart:', error);
             });
         }
       };
@@ -124,6 +181,9 @@ const DashboardCanvas = ({ mode, onCreateChart, onDeleteChart, onUpdateChart }) 
       
       // Store the handler for external calls
       window.updateChartFromChatbot = handleChartUpdate;
+      console.log('DashboardCanvas: Registered window.updateChartFromChatbot');
+    } else {
+      console.log('DashboardCanvas: onUpdateChart prop not provided');
     }
   }, [onCreateChart, onDeleteChart, onUpdateChart]);
 
@@ -131,14 +191,19 @@ const DashboardCanvas = ({ mode, onCreateChart, onDeleteChart, onUpdateChart }) 
   useEffect(() => {
     const loadLayout = async () => {
       try {
-        const savedLayout = await layoutService.loadLayout();
-        if (savedLayout && savedLayout.length > 0) {
-          setItems(savedLayout);
-          console.log('Loaded saved layout with', savedLayout.length, 'items');
-          
-          // Fetch data for all charts that have x and y fields configured
+        console.log('DashboardCanvas: Loading layout from API...');
+        
+        // Use the refresh function to load items from API
+        const apiItems = await refreshItemsFromAPI();
+        
+        // If we have items from API, set them and fetch their data
+        if (apiItems.length > 0) {
+          console.log('DashboardCanvas: Setting items from API and fetching data...');
+          console.log('DashboardCanvas: API items to set:', apiItems);
+          setItems(apiItems); // Set the items array first
+          console.log('DashboardCanvas: Items array set from API');
           setLoading(true);
-          const fetchPromises = savedLayout.map(async (item) => {
+          const fetchPromises = apiItems.map(async (item) => {
             const { xField, yField, type } = item.config;
             
             // Check if chart has required fields configured
@@ -165,6 +230,47 @@ const DashboardCanvas = ({ mode, onCreateChart, onDeleteChart, onUpdateChart }) 
           // Wait for all data fetching to complete
           await Promise.all(fetchPromises);
           setLoading(false);
+        }
+        // If no items from API, try fallback to layoutService
+        else if (apiItems.length === 0) {
+          console.log('DashboardCanvas: No items from API, trying fallback...');
+          const savedLayout = await layoutService.loadLayout();
+          console.log('DashboardCanvas: Fallback layout result:', savedLayout);
+          
+          if (savedLayout && savedLayout.length > 0) {
+            setItems(savedLayout);
+            console.log('Loaded saved layout with', savedLayout.length, 'items');
+            
+            // Fetch data for all charts that have x and y fields configured
+            setLoading(true);
+            const fetchPromises = savedLayout.map(async (item) => {
+              const { xField, yField, type } = item.config;
+              
+              // Check if chart has required fields configured
+              const isPieChartReady = type === 'pie' && yField;
+              const isOtherChartReady = type !== 'pie' && xField && yField;
+              
+              if (isPieChartReady || isOtherChartReady) {
+                try {
+                  console.log(`Fetching data for ${item.id}: xField=${xField}, yField=${yField}, type=${type}`);
+                  const data = await fetchChartData(xField, yField, type, {});
+                  setChartData(prev => ({
+                    ...prev,
+                    [item.id]: data
+                  }));
+                  console.log(`✅ Fetched data for ${item.id}:`, data.length, 'records');
+                } catch (error) {
+                  console.error(`❌ Error fetching data for ${item.id}:`, error);
+                }
+              } else {
+                console.log(`⏭️ Skipping ${item.id}: missing required fields (xField=${xField}, yField=${yField})`);
+              }
+            });
+            
+            // Wait for all data fetching to complete
+            await Promise.all(fetchPromises);
+            setLoading(false);
+          }
         }
       } catch (error) {
         console.error('Error loading layout:', error);
@@ -343,25 +449,47 @@ const DashboardCanvas = ({ mode, onCreateChart, onDeleteChart, onUpdateChart }) 
   const deleteChartByName = async (chartName) => {
     console.log(`Deleting chart with name: "${chartName}"`);
     
-    // Find the chart by name (case-insensitive)
-    const chartToDelete = items.find(item => 
+    // Fetch current charts from API
+    let currentCharts = [];
+    try {
+      const layoutResponse = await fetch('http://localhost:4000/api/layout');
+      if (layoutResponse.ok) {
+        const layoutData = await layoutResponse.json();
+        if (layoutData.success && layoutData.layout) {
+          currentCharts = layoutData.layout;
+          console.log('Fetched charts from API for deletion:', currentCharts);
+        }
+      }
+    } catch (error) {
+      console.error('Error fetching charts from API:', error);
+      // Fallback to local items
+      currentCharts = items;
+    }
+    
+    // Normalize names for comparison (lowercase, replace spaces with underscores)
+    const normalizeName = (name) => name.toLowerCase().replace(/\s+/g, '_');
+    const normalizedChartName = normalizeName(chartName);
+    
+    // Find the chart by name using normalized comparison
+    const chartToDelete = currentCharts.find(item => 
       item.config && item.config.title && 
-      item.config.title.toLowerCase() === chartName.toLowerCase()
+      normalizeName(item.config.title) === normalizedChartName
     );
     
     if (chartToDelete) {
       console.log(`Found chart to delete:`, chartToDelete);
-      const updatedItems = items.filter(item => item.id !== chartToDelete.id);
-      setItems(updatedItems);
+      const updatedItems = currentCharts.filter(item => item.id !== chartToDelete.id);
       
-      // Save layout after removal
-      if (mode === 'design') {
-        try {
-          await layoutService.saveLayout(updatedItems);
-          console.log(`Successfully deleted chart: "${chartName}"`);
-        } catch (error) {
-          console.error('Error saving layout after chart deletion:', error);
-        }
+      // Save layout after removal to API
+      try {
+        await layoutService.saveLayout(updatedItems);
+        console.log(`Successfully deleted chart: "${chartName}" and saved to API`);
+        
+        // Update local items array to reflect the API state
+        setItems(updatedItems);
+        console.log('Local items array updated after deletion');
+      } catch (error) {
+        console.error('Error saving layout after chart deletion:', error);
       }
       return true; // Chart found and deleted
     } else {
@@ -374,16 +502,55 @@ const DashboardCanvas = ({ mode, onCreateChart, onDeleteChart, onUpdateChart }) 
   const updateChartByName = async (chartConfig) => {
     console.log(`Updating chart with name: "${chartConfig.plotName}"`);
     
-    // Find the chart by name (case-insensitive)
-    const chartToUpdate = items.find(item => 
+    // Fetch current charts from API
+    let currentCharts = [];
+    try {
+      const response = await apiService.getExistingCharts();
+      if (response) {
+        // Parse the slash-separated string back to array
+        const chartTitles = response.split('/').filter(title => title.trim());
+        console.log('Fetched chart titles from API:', chartTitles);
+        
+        // Get full layout data
+        const layoutResponse = await fetch('http://localhost:4000/api/layout');
+        if (layoutResponse.ok) {
+          const layoutData = await layoutResponse.json();
+          if (layoutData.success && layoutData.layout) {
+            currentCharts = layoutData.layout;
+            console.log('Fetched full layout from API:', currentCharts);
+          }
+        }
+      }
+    } catch (error) {
+      console.error('Error fetching charts from API:', error);
+      // Fallback to local items
+      currentCharts = items;
+    }
+    
+    console.log(`Available charts:`, currentCharts.map(item => ({ 
+      id: item.id, 
+      title: item.config?.title, 
+      type: item.type 
+    })));
+    
+    // Normalize names for comparison (lowercase, replace spaces with underscores)
+    const normalizeName = (name) => name.toLowerCase().replace(/\s+/g, '_');
+    const normalizedPlotName = normalizeName(chartConfig.plotName);
+    console.log(`Normalized plot name: "${normalizedPlotName}"`);
+    console.log(`Available normalized chart names:`, currentCharts.map(item => 
+      item.config?.title ? normalizeName(item.config.title) : 'no title'
+    ));
+    
+    // Find the chart by name using normalized comparison
+    const chartToUpdate = currentCharts.find(item => 
       item.config && item.config.title && 
-      item.config.title.toLowerCase() === chartConfig.plotName.toLowerCase()
+      normalizeName(item.config.title) === normalizedPlotName
     );
     
     if (chartToUpdate) {
       console.log(`Found chart to update:`, chartToUpdate);
       
-      // Start with existing chart configuration
+      // Start with existing chart configuration (preserve all existing values)
       const updatedChart = {
         ...chartToUpdate,
         config: {
@@ -391,32 +558,75 @@ const DashboardCanvas = ({ mode, onCreateChart, onDeleteChart, onUpdateChart }) 
         }
       };
       
-      // Only update fields that are provided in the chartConfig
+      console.log('Original chart config:', {
+        type: chartToUpdate.type,
+        xField: chartToUpdate.config.xField,
+        yField: chartToUpdate.config.yField,
+        height: chartToUpdate.config.height,
+        title: chartToUpdate.config.title
+      });
+      
+      console.log('Update request fields:', {
+        plotType: chartConfig.plotType,
+        xAxis: chartConfig.xAxis,
+        yAxis: chartConfig.yAxis,
+        size: chartConfig.size
+      });
+      
+      // Only update fields that are provided in the chartConfig (preserve others)
       if (chartConfig.plotType) {
         updatedChart.type = chartConfig.plotType;
-        console.log(`Updating chart type to: ${chartConfig.plotType}`);
+        console.log(`✅ Updating chart type: ${chartToUpdate.type} → ${chartConfig.plotType}`);
+      } else {
+        console.log(`⏭️ Preserving chart type: ${chartToUpdate.type}`);
       }
       
       if (chartConfig.xAxis) {
         updatedChart.config.xField = chartConfig.xAxis;
-        console.log(`Updating xField to: ${chartConfig.xAxis}`);
+        console.log(`✅ Updating xField: ${chartToUpdate.config.xField} → ${chartConfig.xAxis}`);
+      } else {
+        console.log(`⏭️ Preserving xField: ${chartToUpdate.config.xField}`);
       }
       
       if (chartConfig.yAxis) {
         updatedChart.config.yField = chartConfig.yAxis;
-        console.log(`Updating yField to: ${chartConfig.yAxis}`);
+        console.log(`✅ Updating yField: ${chartToUpdate.config.yField} → ${chartConfig.yAxis}`);
+      } else {
+        console.log(`⏭️ Preserving yField: ${chartToUpdate.config.yField}`);
       }
       
       if (chartConfig.size) {
-        updatedChart.config.height = chartConfig.size === 'small' ? 200 : chartConfig.size === 'large' ? 400 : 300;
-        console.log(`Updating chart size to: ${chartConfig.size} (height: ${updatedChart.config.height})`);
+        const newHeight = chartConfig.size === 'small' ? 200 : chartConfig.size === 'large' ? 400 : 300;
+        updatedChart.config.height = newHeight;
+        console.log(`✅ Updating chart size: ${chartToUpdate.config.height} → ${newHeight} (${chartConfig.size})`);
+      } else {
+        console.log(`⏭️ Preserving chart height: ${chartToUpdate.config.height}`);
       }
       
-      // Update the items array
-      const updatedItems = items.map(item => 
+      console.log('Final updated chart config:', {
+        type: updatedChart.type,
+        xField: updatedChart.config.xField,
+        yField: updatedChart.config.yField,
+        height: updatedChart.config.height,
+        title: updatedChart.config.title
+      });
+      
+      // Update the items array (both local state and API)
+      const updatedItems = currentCharts.map(item => 
         item.id === chartToUpdate.id ? updatedChart : item
       );
-      setItems(updatedItems);
+      
+      // Save the updated layout to the API
+      try {
+        await layoutService.saveLayout(updatedItems);
+        console.log('Updated layout saved to API');
+        
+        // Update local items array to reflect the API state
+        setItems(updatedItems);
+        console.log('Local items array updated with API data');
+      } catch (error) {
+        console.error('Error saving updated layout to API:', error);
+      }
       
       // Fetch new data for the updated chart only if xAxis or yAxis changed
       const needsDataRefresh = chartConfig.xAxis || chartConfig.yAxis;
