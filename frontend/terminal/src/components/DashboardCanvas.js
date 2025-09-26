@@ -1,7 +1,8 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { BarChart, LineChart, PieChart, ScatterChart } from '../charts';
 import { apiService } from '../services/api';
 import { shipmentFields } from '../sampleData';
+import layoutService from '../services/layoutService';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { 
   faChartBar, 
@@ -58,6 +59,68 @@ const DashboardCanvas = ({ mode }) => {
   const [loading, setLoading] = useState(false);
   const [rangeFilters, setRangeFilters] = useState({});
 
+  // Load saved layout on component mount
+  useEffect(() => {
+    const loadLayout = async () => {
+      try {
+        const savedLayout = await layoutService.loadLayout();
+        if (savedLayout && savedLayout.length > 0) {
+          setItems(savedLayout);
+          console.log('Loaded saved layout with', savedLayout.length, 'items');
+          
+          // Fetch data for all charts that have x and y fields configured
+          setLoading(true);
+          const fetchPromises = savedLayout.map(async (item) => {
+            const { xField, yField, type } = item.config;
+            
+            // Check if chart has required fields configured
+            const isPieChartReady = type === 'pie' && yField;
+            const isOtherChartReady = type !== 'pie' && xField && yField;
+            
+            if (isPieChartReady || isOtherChartReady) {
+              try {
+                console.log(`Fetching data for ${item.id}: xField=${xField}, yField=${yField}, type=${type}`);
+                const data = await fetchChartData(xField, yField, type, {});
+                setChartData(prev => ({
+                  ...prev,
+                  [item.id]: data
+                }));
+                console.log(`✅ Fetched data for ${item.id}:`, data.length, 'records');
+              } catch (error) {
+                console.error(`❌ Error fetching data for ${item.id}:`, error);
+              }
+            } else {
+              console.log(`⏭️ Skipping ${item.id}: missing required fields (xField=${xField}, yField=${yField})`);
+            }
+          });
+          
+          // Wait for all data fetching to complete
+          await Promise.all(fetchPromises);
+          setLoading(false);
+        }
+      } catch (error) {
+        console.error('Error loading layout:', error);
+      }
+    };
+    
+    loadLayout();
+  }, []);
+
+  // Save layout whenever items change (only in design mode)
+  useEffect(() => {
+    if (mode === 'design' && items.length > 0) {
+      const timeoutId = setTimeout(async () => {
+        try {
+          await layoutService.saveLayout(items);
+        } catch (error) {
+          console.error('Error saving layout:', error);
+        }
+      }, 1000); // Debounce saving by 1 second
+
+      return () => clearTimeout(timeoutId);
+    }
+  }, [items, mode]);
+
   // Use shipment fields directly from frontend
   const availableColumns = shipmentFields;
 
@@ -88,18 +151,27 @@ const DashboardCanvas = ({ mode }) => {
 
   // Handle chart configuration updates
   const handleItemConfig = async (itemId, config) => {
-    setItems(prev => 
-      prev.map(item => 
-        item.id === itemId 
-          ? { 
-              ...item, 
-              config: { ...item.config, ...config },
-              // Update item height when config height changes
-              ...(config.height && { height: config.height })
-            }
-          : item
-      )
+    const updatedItems = items.map(item => 
+      item.id === itemId 
+        ? { 
+            ...item, 
+            config: { ...item.config, ...config },
+            // Update item height when config height changes
+            ...(config.height && { height: config.height })
+          }
+        : item
     );
+    
+    setItems(updatedItems);
+    
+    // Save layout after configuration changes
+    if (mode === 'design') {
+      try {
+        await layoutService.saveLayout(updatedItems);
+      } catch (error) {
+        console.error('Error saving layout after config change:', error);
+      }
+    }
     
     // Don't auto-fetch data - only fetch when Fetch Data button is pressed
   };
@@ -134,7 +206,7 @@ const DashboardCanvas = ({ mode }) => {
   };
 
 
-  const handleDrop = (e) => {
+  const handleDrop = async (e) => {
     e.preventDefault();
     setDragOver(false);
     
@@ -152,7 +224,17 @@ const DashboardCanvas = ({ mode }) => {
       }
     };
 
-    setItems([...items, newItem]);
+    const updatedItems = [...items, newItem];
+    setItems(updatedItems);
+    
+    // Save layout immediately after adding new item
+    if (mode === 'design') {
+      try {
+        await layoutService.saveLayout(updatedItems);
+      } catch (error) {
+        console.error('Error saving layout after drop:', error);
+      }
+    }
   };
 
   const handleDragOver = (e) => {
@@ -164,8 +246,29 @@ const DashboardCanvas = ({ mode }) => {
     setDragOver(false);
   };
 
-  const removeItem = (id) => {
-    setItems(items.filter(item => item.id !== id));
+  const removeItem = async (id) => {
+    const updatedItems = items.filter(item => item.id !== id);
+    setItems(updatedItems);
+    // Save layout after removal
+    if (mode === 'design') {
+      try {
+        await layoutService.saveLayout(updatedItems);
+      } catch (error) {
+        console.error('Error saving layout after removal:', error);
+      }
+    }
+  };
+
+  // Clear all items and save empty layout
+  const clearLayout = async () => {
+    setItems([]);
+    if (mode === 'design') {
+      try {
+        await layoutService.saveLayout([]);
+      } catch (error) {
+        console.error('Error clearing layout:', error);
+      }
+    }
   };
 
 
@@ -501,12 +604,20 @@ const DashboardCanvas = ({ mode }) => {
                 <div className="pt-2">
                   <button
                     onClick={async () => {
-                      const filters = rangeFilters[item.id] || {};
-                      const data = await fetchChartData(item.config.xField, item.config.yField, item.type, filters);
-                      setChartData(prev => ({
-                        ...prev,
-                        [item.id]: data
-                      }));
+                      try {
+                        setLoading(true);
+                        const filters = rangeFilters[item.id] || {};
+                        const data = await fetchChartData(item.config.xField, item.config.yField, item.type, filters);
+                        setChartData(prev => ({
+                          ...prev,
+                          [item.id]: data
+                        }));
+                        console.log(`✅ Manually fetched data for ${item.id}:`, data.length, 'records');
+                      } catch (error) {
+                        console.error(`❌ Error manually fetching data for ${item.id}:`, error);
+                      } finally {
+                        setLoading(false);
+                      }
                     }}
                     disabled={loading}
                     className="w-full px-3 py-2 bg-blue-600 hover:bg-blue-700 disabled:bg-blue-400 text-white text-sm font-medium rounded-md transition-colors flex items-center justify-center gap-2"

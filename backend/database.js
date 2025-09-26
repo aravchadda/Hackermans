@@ -17,17 +17,17 @@ const connectDatabase = async () => {
       
       db = new Database(dbPath, (err) => {
         if (err) {
-          console.error('❌ Database connection failed:', err);
+          console.error(' Database connection failed:', err);
           reject(err);
         } else {
-          console.log('✅ DuckDB connected successfully');
+          console.log(' DuckDB connected successfully');
           initializeTables()
             .then(() => resolve())
             .catch(reject);
         }
       });
     } catch (error) {
-      console.error('❌ Database initialization error:', error);
+      console.error(' Database initialization error:', error);
       reject(error);
     }
   });
@@ -74,6 +74,13 @@ const initializeTables = async () => {
       BayCode VARCHAR,
       ScheduledDate VARCHAR,
       CreatedTime VARCHAR
+    )`,
+    
+    `CREATE TABLE IF NOT EXISTS dashboard_layout (
+      id INTEGER PRIMARY KEY,
+      layout_data JSON,
+      created_at TIMESTAMP DEFAULT NOW(),
+      updated_at TIMESTAMP DEFAULT NOW()
     )`
   ];
   
@@ -104,13 +111,13 @@ const initializeTables = async () => {
       database.run(`INSERT INTO sample_data (name, value, category) VALUES ('${name}', ${value}, '${category}')`);
     }
     
-    console.log('✅ Sample data inserted');
+    console.log(' Sample data inserted');
   }
   
   // Load shipment data from CSV
   await loadShipmentData();
   
-  console.log('✅ Database tables initialized');
+  console.log(' Database tables initialized');
 };
 
 const loadShipmentData = async () => {
@@ -130,12 +137,12 @@ const loadShipmentData = async () => {
       `);
       
       const finalCount = await runQueryCount('SELECT COUNT(*) as count FROM shipments');
-      console.log(`✅ Loaded ${finalCount} shipment records`);
+      console.log(` Loaded ${finalCount} shipment records`);
     } else {
-      console.log(`✅ Shipment data already loaded (${shipmentCount} records)`);
+      console.log(` Shipment data already loaded (${shipmentCount} records)`);
     }
   } catch (error) {
-    console.error('❌ Error loading shipment data:', error);
+    console.error('Error loading shipment data:', error);
   }
 };
 
