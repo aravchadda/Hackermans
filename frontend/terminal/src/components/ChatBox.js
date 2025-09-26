@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
+import { apiService } from '../services/api';
 
-const ChatBox = ({ isVisible, onClose }) => {
+const ChatBox = ({ isVisible, onClose, onCreateChart }) => {
   const [messages, setMessages] = useState([
     {
       id: 1,
@@ -11,8 +12,9 @@ const ChatBox = ({ isVisible, onClose }) => {
   ]);
   const [inputText, setInputText] = useState('');
   const [searchTerm, setSearchTerm] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
 
-  const handleSendMessage = (e) => {
+  const handleSendMessage = async (e) => {
     e.preventDefault();
     if (!inputText.trim()) return;
 
@@ -26,16 +28,72 @@ const ChatBox = ({ isVisible, onClose }) => {
     setMessages([...messages, newMessage]);
     setInputText('');
 
-    // Simulate AI response
-    setTimeout(() => {
-      const aiResponse = {
-        id: messages.length + 2,
-        text: "I understand you want to " + inputText + ". Let me help you with that!",
-        sender: "ai",
-        timestamp: new Date().toLocaleTimeString()
-      };
-      setMessages(prev => [...prev, aiResponse]);
-    }, 1000);
+    // Call chatbot API
+    setIsLoading(true);
+    try {
+      console.log('Sending chatbot query:', inputText);
+      const response = await apiService.sendChatbotQuery(inputText);
+      console.log('Chatbot API response:', response);
+      
+      if (response) {
+        // Create the chart using the response data
+        if (onCreateChart && response.operation === 'create') {
+          const chartConfig = {
+            id: `chart_${Date.now()}`,
+            type: response.plotType,
+            config: {
+              xField: response.xAxis,
+              yField: response.yAxis,
+              title: response.plotName,
+              height: response.size === 'small' ? 200 : response.size === 'large' ? 400 : 300
+            }
+          };
+          
+          onCreateChart(chartConfig);
+        }
+        
+        const aiResponse = {
+          id: messages.length + 2,
+          text: `I've created a ${response.plotType} chart named "${response.plotName}" with ${response.xAxis} on X-axis and ${response.yAxis} on Y-axis. Size: ${response.size}`,
+          sender: "ai",
+          timestamp: new Date().toLocaleTimeString(),
+          chartData: response // Store the chart configuration
+        };
+        setMessages(prev => [...prev, aiResponse]);
+      } else {
+        const errorResponse = {
+          id: messages.length + 2,
+          text: "Sorry, I couldn't process your request. Please try again.",
+          sender: "ai",
+          timestamp: new Date().toLocaleTimeString()
+        };
+        setMessages(prev => [...prev, errorResponse]);
+      }
+    } catch (error) {
+      console.error('Error calling chatbot API:', error);
+      console.error('Error details:', error.response?.data || error.message);
+      
+      // Check if it's a network error (backend not running)
+      if (error.code === 'ECONNREFUSED' || error.message.includes('Network Error') || error.message.includes('fetch')) {
+        const errorResponse = {
+          id: messages.length + 2,
+          text: "Backend server is not running. Please start the backend server on port 4000 and try again.",
+          sender: "ai",
+          timestamp: new Date().toLocaleTimeString()
+        };
+        setMessages(prev => [...prev, errorResponse]);
+      } else {
+        const errorResponse = {
+          id: messages.length + 2,
+          text: `Sorry, there was an error processing your request: ${error.message}. Please try again.`,
+          sender: "ai",
+          timestamp: new Date().toLocaleTimeString()
+        };
+        setMessages(prev => [...prev, errorResponse]);
+      }
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   const filteredMessages = messages.filter(message =>
@@ -115,9 +173,14 @@ const ChatBox = ({ isVisible, onClose }) => {
           />
           <button
             type="submit"
-            className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors text-sm font-medium"
+            disabled={isLoading}
+            className={`px-4 py-2 rounded-lg transition-colors text-sm font-medium ${
+              isLoading 
+                ? 'bg-gray-400 text-gray-200 cursor-not-allowed' 
+                : 'bg-blue-500 text-white hover:bg-blue-600'
+            }`}
           >
-            Send
+            {isLoading ? 'Creating...' : 'Send'}
           </button>
         </form>
       </div>

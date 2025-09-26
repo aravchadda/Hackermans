@@ -117,5 +117,33 @@ export const apiService = {
       console.error('Error fetching shipments by bay:', error);
       return [];
     }
+  },
+
+  // Chatbot query endpoint
+  async sendChatbotQuery(query) {
+    try {
+      console.log('Making chatbot API request to:', '/chatbot/query');
+      console.log('Request payload:', { query });
+      
+      const response = await apiClient.post('/chatbot/query', {
+        query: query
+      });
+      
+      console.log('Full API response:', response);
+      console.log('Response data:', response.data);
+      
+      if (response.data && response.data.success) {
+        return response.data.data;
+      } else {
+        console.error('API returned success: false', response.data);
+        return null;
+      }
+    } catch (error) {
+      console.error('Error sending chatbot query:', error);
+      console.error('Error response:', error.response?.data);
+      console.error('Error status:', error.response?.status);
+      console.error('Error headers:', error.response?.headers);
+      throw error; // Re-throw to let the component handle it
+    }
   }
 };

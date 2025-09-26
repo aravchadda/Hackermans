@@ -313,6 +313,42 @@ app.get('/api/shipments/columns', async (req, res) => {
     }
 });
 
+// Chatbot API endpoint
+app.post('/api/chatbot/query', async (req, res) => {
+    try {
+        const { query } = req.body;
+        
+        if (!query) {
+            return res.status(400).json({
+                success: false,
+                error: 'Query parameter is required'
+            });
+        }
+        
+        // Dummy response for now
+        const dummyResponse = {
+            plotName: "Sales Analysis",
+            operation: "create",
+            plotType: "bar",
+            size: "medium",
+            xAxis: "BayCode",
+            yAxis: "GrossQuantity"
+        };
+        
+        res.json({
+            success: true,
+            data: dummyResponse,
+            query: query
+        });
+    } catch (error) {
+        console.error('Error processing chatbot query:', error);
+        res.status(500).json({
+            success: false,
+            error: error.message
+        });
+    }
+});
+
 // Get aggregated data for specific columns
 app.get('/api/shipments/aggregated', async (req, res) => {
     try {

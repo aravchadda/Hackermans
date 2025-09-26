@@ -50,7 +50,7 @@ const mockData = {
   revenue: { value: "$84,392", subtitle: "Monthly Revenue" },
 };
 
-const DashboardCanvas = ({ mode }) => {
+const DashboardCanvas = ({ mode, onCreateChart }) => {
   const [items, setItems] = useState([]);
   const [dragOver, setDragOver] = useState(false);
   const [editingItem, setEditingItem] = useState(null);
@@ -58,6 +58,44 @@ const DashboardCanvas = ({ mode }) => {
   const [chartData, setChartData] = useState({});
   const [loading, setLoading] = useState(false);
   const [rangeFilters, setRangeFilters] = useState({});
+
+  // Handle chart creation from chatbot
+  useEffect(() => {
+    if (onCreateChart) {
+      const handleChartCreation = (chartConfig) => {
+        console.log('DashboardCanvas received chart config:', chartConfig);
+        
+        // Create a new chart item
+        const newChartItem = {
+          id: chartConfig.id,
+          type: chartConfig.type,
+          config: chartConfig.config,
+          position: { x: 0, y: 0, w: 6, h: 4 } // Default position and size
+        };
+        
+        // Add the new chart to the items
+        setItems(prevItems => [...prevItems, newChartItem]);
+        
+        // Fetch data for the new chart
+        const { xField, yField, type } = chartConfig.config;
+        if (xField && yField) {
+          fetchChartData(xField, yField, type, {})
+            .then(data => {
+              setChartData(prev => ({
+                ...prev,
+                [chartConfig.id]: data
+              }));
+            })
+            .catch(error => {
+              console.error('Error fetching data for new chart:', error);
+            });
+        }
+      };
+      
+      // Store the handler for external calls
+      window.createChartFromChatbot = handleChartCreation;
+    }
+  }, [onCreateChart]);
 
   // Load saved layout on component mount
   useEffect(() => {
