@@ -1,0 +1,902 @@
+{
+  "analysis_metadata": {
+    "analysis_date": "2025-09-27T02:30:18.026843",
+    "total_records_analyzed": 98998,
+    "date_range": {
+      "start": "2014-07-24T06:03:21",
+      "end": "2017-11-07T21:30:43"
+    }
+  },
+  "delay_statistics": {
+    "total_shipments": 98998,
+    "average_delay_minutes": -12396.627816101298,
+    "median_delay_minutes": 19.816666666666666,
+    "max_delay_minutes": 47315.316666666666,
+    "min_delay_minutes": -61814931.06666667,
+    "std_delay_minutes": 872071.523035201,
+    "delayed_shipments": 98411,
+    "on_time_shipments": 20,
+    "delay_percentage": 99.40705872845916
+  },
+  "category_analysis": {
+    "BayCode": {
+      "top_delayed": [
+        {
+          "BayCode": "LANE04",
+          "DelayMinutes_count": 11418,
+          "DelayMinutes_mean": 51.35,
+          "DelayMinutes_median": 33.81,
+          "DelayMinutes_std": 76.1,
+          "DelayMinutes_max": 1576.27,
+          "GrossQuantity_sum": 52369372.2,
+          "weighted_avg_delay": 53.83
+        },
+        {
+          "BayCode": "LANE02",
+          "DelayMinutes_count": 29214,
+          "DelayMinutes_mean": -4182.44,
+          "DelayMinutes_median": 20.42,
+          "DelayMinutes_std": 510546.93,
+          "DelayMinutes_max": 47315.32,
+          "GrossQuantity_sum": 99210596.4,
+          "weighted_avg_delay": -10538.31
+        },
+        {
+          "BayCode": "LANE01",
+          "DelayMinutes_count": 42559,
+          "DelayMinutes_mean": -14495.75,
+          "DelayMinutes_median": 18.35,
+          "DelayMinutes_std": 947440.64,
+          "DelayMinutes_max": 47315.32,
+          "GrossQuantity_sum": 156886300.1,
+          "weighted_avg_delay": -14165.97
+        },
+        {
+          "BayCode": "LANE03",
+          "DelayMinutes_count": 15240,
+          "DelayMinutes_mean": -31606.85,
+          "DelayMinutes_median": 19.77,
+          "DelayMinutes_std": 1380229.21,
+          "DelayMinutes_max": 9626.13,
+          "GrossQuantity_sum": 64916006.3,
+          "weighted_avg_delay": -34320.63
+        }
+      ],
+      "summary": {
+        "total_categories": 4,
+        "highest_avg_delay": 51.35,
+        "lowest_avg_delay": -31606.85
+      }
+    },
+    "BaseProductCode": {
+      "top_delayed": [
+        {
+          "BaseProductCode": 233285.0,
+          "DelayMinutes_count": 6774,
+          "DelayMinutes_mean": 68.65,
+          "DelayMinutes_median": 39.42,
+          "DelayMinutes_std": 86.43,
+          "DelayMinutes_max": 605.92,
+          "GrossQuantity_sum": 33319349.8,
+          "weighted_avg_delay": 69.74
+        },
+        {
+          "BaseProductCode": 210405.0,
+          "DelayMinutes_count": 2286,
+          "DelayMinutes_mean": 45.86,
+          "DelayMinutes_median": 19.22,
+          "DelayMinutes_std": 989.52,
+          "DelayMinutes_max": 47315.32,
+          "GrossQuantity_sum": 9208440.2,
+          "weighted_avg_delay": 39.11
+        },
+        {
+          "BaseProductCode": 231380.0,
+          "DelayMinutes_count": 2151,
+          "DelayMinutes_mean": 23.38,
+          "DelayMinutes_median": 17.83,
+          "DelayMinutes_std": 46.58,
+          "DelayMinutes_max": 1576.27,
+          "GrossQuantity_sum": 9031397.2,
+          "weighted_avg_delay": 23.39
+        },
+        {
+          "BaseProductCode": 210403.0,
+          "DelayMinutes_count": 23545,
+          "DelayMinutes_mean": -7838.96,
+          "DelayMinutes_median": 18.95,
+          "DelayMinutes_std": 697728.89,
+          "DelayMinutes_max": 47315.32,
+          "GrossQuantity_sum": 7034193.3,
+          "weighted_avg_delay": -6418.89
+        },
+        {
+          "BaseProductCode": 231231.0,
+          "DelayMinutes_count": 12680,
+          "DelayMinutes_mean": -9477.12,
+          "DelayMinutes_median": 19.37,
+          "DelayMinutes_std": 756722.73,
+          "DelayMinutes_max": 23612.63,
+          "GrossQuantity_sum": 51076384.0,
+          "weighted_avg_delay": -10590.69
+        },
+        {
+          "BaseProductCode": 210404.0,
+          "DelayMinutes_count": 15760,
+          "DelayMinutes_mean": -11727.57,
+          "DelayMinutes_median": 19.12,
+          "DelayMinutes_std": 852803.09,
+          "DelayMinutes_max": 47315.32,
+          "GrossQuantity_sum": 80056336.1,
+          "weighted_avg_delay": -10982.78
+        },
+        {
+          "BaseProductCode": 231245.0,
+          "DelayMinutes_count": 33271,
+          "DelayMinutes_mean": -20169.76,
+          "DelayMinutes_median": 19.5,
+          "DelayMinutes_std": 1110645.72,
+          "DelayMinutes_max": 47315.32,
+          "GrossQuantity_sum": 174833860.0,
+          "weighted_avg_delay": -22021.79
+        },
+        {
+          "BaseProductCode": 231384.0,
+          "DelayMinutes_count": 1964,
+          "DelayMinutes_mean": -30651.6,
+          "DelayMinutes_median": 24.77,
+          "DelayMinutes_std": 1359652.01,
+          "DelayMinutes_max": 528.52,
+          "GrossQuantity_sum": 8822314.4,
+          "weighted_avg_delay": -20460.86
+        }
+      ],
+      "summary": {
+        "total_categories": 8,
+        "highest_avg_delay": 68.65,
+        "lowest_avg_delay": -30651.6
+      }
+    },
+    "Hour": {
+      "top_delayed": [
+        {
+          "Hour": 9.0,
+          "DelayMinutes_count": 6623,
+          "DelayMinutes_mean": 90.28,
+          "DelayMinutes_median": 19.7,
+          "DelayMinutes_std": 1643.61,
+          "DelayMinutes_max": 47315.32,
+          "GrossQuantity_sum": 25080905.2,
+          "weighted_avg_delay": 75.78
+        },
+        {
+          "Hour": 13.0,
+          "DelayMinutes_count": 4846,
+          "DelayMinutes_mean": 81.16,
+          "DelayMinutes_median": 18.07,
+          "DelayMinutes_std": 1172.9,
+          "DelayMinutes_max": 23612.63,
+          "GrossQuantity_sum": 17786480.6,
+          "weighted_avg_delay": 75.32
+        },
+        {
+          "Hour": 8.0,
+          "DelayMinutes_count": 5191,
+          "DelayMinutes_mean": 40.64,
+          "DelayMinutes_median": 19.97,
+          "DelayMinutes_std": 75.03,
+          "DelayMinutes_max": 1576.27,
+          "GrossQuantity_sum": 20331122.1,
+          "weighted_avg_delay": 42.31
+        },
+        {
+          "Hour": 16.0,
+          "DelayMinutes_count": 2321,
+          "DelayMinutes_mean": 37.64,
+          "DelayMinutes_median": 19.0,
+          "DelayMinutes_std": 248.37,
+          "DelayMinutes_max": 4009.05,
+          "GrossQuantity_sum": 8722681.2,
+          "weighted_avg_delay": 25.44
+        },
+        {
+          "Hour": 2.0,
+          "DelayMinutes_count": 594,
+          "DelayMinutes_mean": 33.97,
+          "DelayMinutes_median": 25.0,
+          "DelayMinutes_std": 55.98,
+          "DelayMinutes_max": 501.37,
+          "GrossQuantity_sum": 2344032.4,
+          "weighted_avg_delay": 36.24
+        },
+        {
+          "Hour": 6.0,
+          "DelayMinutes_count": 9109,
+          "DelayMinutes_mean": 32.86,
+          "DelayMinutes_median": 21.93,
+          "DelayMinutes_std": 106.51,
+          "DelayMinutes_max": 9626.13,
+          "GrossQuantity_sum": 36320112.7,
+          "weighted_avg_delay": 32.61
+        },
+        {
+          "Hour": 7.0,
+          "DelayMinutes_count": 5295,
+          "DelayMinutes_mean": 32.68,
+          "DelayMinutes_median": 21.78,
+          "DelayMinutes_std": 41.63,
+          "DelayMinutes_max": 271.12,
+          "GrossQuantity_sum": 20823201.1,
+          "weighted_avg_delay": 33.99
+        },
+        {
+          "Hour": 10.0,
+          "DelayMinutes_count": 5568,
+          "DelayMinutes_mean": 29.56,
+          "DelayMinutes_median": 18.74,
+          "DelayMinutes_std": 50.5,
+          "DelayMinutes_max": 420.0,
+          "GrossQuantity_sum": 21052478.2,
+          "weighted_avg_delay": 30.87
+        },
+        {
+          "Hour": 15.0,
+          "DelayMinutes_count": 1679,
+          "DelayMinutes_mean": 28.33,
+          "DelayMinutes_median": 18.97,
+          "DelayMinutes_std": 46.73,
+          "DelayMinutes_max": 605.92,
+          "GrossQuantity_sum": 6496237.5,
+          "weighted_avg_delay": 27.96
+        },
+        {
+          "Hour": 11.0,
+          "DelayMinutes_count": 4847,
+          "DelayMinutes_mean": 28.02,
+          "DelayMinutes_median": 19.22,
+          "DelayMinutes_std": 49.55,
+          "DelayMinutes_max": 486.15,
+          "GrossQuantity_sum": 18131683.8,
+          "weighted_avg_delay": 29.49
+        }
+      ],
+      "summary": {
+        "total_categories": 24,
+        "highest_avg_delay": 90.28,
+        "lowest_avg_delay": -781833.18
+      }
+    },
+    "DayOfWeek": {
+      "top_delayed": [
+        {
+          "DayOfWeek": "Wednesday",
+          "DelayMinutes_count": 18264,
+          "DelayMinutes_mean": 49.41,
+          "DelayMinutes_median": 19.63,
+          "DelayMinutes_std": 993.34,
+          "DelayMinutes_max": 47315.32,
+          "GrossQuantity_sum": 68690139.2,
+          "weighted_avg_delay": 43.74
+        },
+        {
+          "DayOfWeek": "Thursday",
+          "DelayMinutes_count": 17373,
+          "DelayMinutes_mean": 29.53,
+          "DelayMinutes_median": 19.88,
+          "DelayMinutes_std": 99.66,
+          "DelayMinutes_max": 4009.05,
+          "GrossQuantity_sum": 65794621.7,
+          "weighted_avg_delay": 28.28
+        },
+        {
+          "DayOfWeek": "Tuesday",
+          "DelayMinutes_count": 18851,
+          "DelayMinutes_mean": 27.54,
+          "DelayMinutes_median": 19.93,
+          "DelayMinutes_std": 38.52,
+          "DelayMinutes_max": 605.92,
+          "GrossQuantity_sum": 71686934.1,
+          "weighted_avg_delay": 28.53
+        },
+        {
+          "DayOfWeek": "Sunday",
+          "DelayMinutes_count": 4278,
+          "DelayMinutes_mean": 27.07,
+          "DelayMinutes_median": 20.37,
+          "DelayMinutes_std": 28.25,
+          "DelayMinutes_max": 329.87,
+          "GrossQuantity_sum": 15828114.6,
+          "weighted_avg_delay": 27.41
+        },
+        {
+          "DayOfWeek": "Monday",
+          "DelayMinutes_count": 17357,
+          "DelayMinutes_mean": 26.57,
+          "DelayMinutes_median": 19.85,
+          "DelayMinutes_std": 34.29,
+          "DelayMinutes_max": 536.08,
+          "GrossQuantity_sum": 66538886.1,
+          "weighted_avg_delay": 27.55
+        },
+        {
+          "DayOfWeek": "Friday",
+          "DelayMinutes_count": 17222,
+          "DelayMinutes_mean": 26.39,
+          "DelayMinutes_median": 19.65,
+          "DelayMinutes_std": 39.72,
+          "DelayMinutes_max": 1576.27,
+          "GrossQuantity_sum": 65359252.7,
+          "weighted_avg_delay": 27.32
+        },
+        {
+          "DayOfWeek": "Saturday",
+          "DelayMinutes_count": 5086,
+          "DelayMinutes_mean": -240499.13,
+          "DelayMinutes_median": 20.38,
+          "DelayMinutes_std": 3829652.21,
+          "DelayMinutes_max": 23612.63,
+          "GrossQuantity_sum": 19484326.6,
+          "weighted_avg_delay": -282486.57
+        }
+      ],
+      "summary": {
+        "total_categories": 7,
+        "highest_avg_delay": 49.41,
+        "lowest_avg_delay": -240499.13
+      }
+    },
+    "Month": {
+      "top_delayed": [
+        {
+          "Month": 4.0,
+          "DelayMinutes_count": 5141,
+          "DelayMinutes_mean": 99.32,
+          "DelayMinutes_median": 21.32,
+          "DelayMinutes_std": 1864.65,
+          "DelayMinutes_max": 47315.32,
+          "GrossQuantity_sum": 19347608.6,
+          "weighted_avg_delay": 78.32
+        },
+        {
+          "Month": 7.0,
+          "DelayMinutes_count": 9616,
+          "DelayMinutes_mean": 56.38,
+          "DelayMinutes_median": 21.05,
+          "DelayMinutes_std": 833.23,
+          "DelayMinutes_max": 23612.63,
+          "GrossQuantity_sum": 35660321.9,
+          "weighted_avg_delay": 53.56
+        },
+        {
+          "Month": 11.0,
+          "DelayMinutes_count": 8029,
+          "DelayMinutes_mean": 32.58,
+          "DelayMinutes_median": 19.27,
+          "DelayMinutes_std": 55.78,
+          "DelayMinutes_max": 533.17,
+          "GrossQuantity_sum": 30594442.2,
+          "weighted_avg_delay": 34.06
+        },
+        {
+          "Month": 6.0,
+          "DelayMinutes_count": 10550,
+          "DelayMinutes_mean": 31.93,
+          "DelayMinutes_median": 19.87,
+          "DelayMinutes_std": 127.01,
+          "DelayMinutes_max": 4009.05,
+          "GrossQuantity_sum": 39730204.5,
+          "weighted_avg_delay": 30.26
+        },
+        {
+          "Month": 10.0,
+          "DelayMinutes_count": 11508,
+          "DelayMinutes_mean": 30.39,
+          "DelayMinutes_median": 18.8,
+          "DelayMinutes_std": 52.56,
+          "DelayMinutes_max": 535.7,
+          "GrossQuantity_sum": 44491970.8,
+          "weighted_avg_delay": 31.21
+        },
+        {
+          "Month": 9.0,
+          "DelayMinutes_count": 11785,
+          "DelayMinutes_mean": 30.08,
+          "DelayMinutes_median": 19.73,
+          "DelayMinutes_std": 49.55,
+          "DelayMinutes_max": 590.77,
+          "GrossQuantity_sum": 45230481.1,
+          "weighted_avg_delay": 31.6
+        },
+        {
+          "Month": 5.0,
+          "DelayMinutes_count": 7966,
+          "DelayMinutes_mean": 27.08,
+          "DelayMinutes_median": 20.0,
+          "DelayMinutes_std": 110.94,
+          "DelayMinutes_max": 9626.13,
+          "GrossQuantity_sum": 29899742.7,
+          "weighted_avg_delay": 26.8
+        },
+        {
+          "Month": 8.0,
+          "DelayMinutes_count": 11696,
+          "DelayMinutes_mean": 26.56,
+          "DelayMinutes_median": 19.6,
+          "DelayMinutes_std": 34.45,
+          "DelayMinutes_max": 455.05,
+          "GrossQuantity_sum": 44985805.0,
+          "weighted_avg_delay": 27.07
+        },
+        {
+          "Month": 3.0,
+          "DelayMinutes_count": 5422,
+          "DelayMinutes_mean": 23.76,
+          "DelayMinutes_median": 19.95,
+          "DelayMinutes_std": 27.23,
+          "DelayMinutes_max": 605.92,
+          "GrossQuantity_sum": 20841507.2,
+          "weighted_avg_delay": 24.16
+        },
+        {
+          "Month": 1.0,
+          "DelayMinutes_count": 5461,
+          "DelayMinutes_mean": 23.34,
+          "DelayMinutes_median": 19.7,
+          "DelayMinutes_std": 32.65,
+          "DelayMinutes_max": 982.23,
+          "GrossQuantity_sum": 20585571.9,
+          "weighted_avg_delay": 23.71
+        }
+      ],
+      "summary": {
+        "total_categories": 12,
+        "highest_avg_delay": 99.32,
+        "lowest_avg_delay": -195379.05
+      }
+    }
+  },
+  "bottleneck_analysis": {
+    "peak_hours": {
+      "top_5": [
+        {
+          "count": 6623,
+          "mean": 90.28,
+          "sum": 597900.9
+        },
+        {
+          "count": 4846,
+          "mean": 81.16,
+          "sum": 393301.05
+        },
+        {
+          "count": 5191,
+          "mean": 40.64,
+          "sum": 210956.95
+        },
+        {
+          "count": 2321,
+          "mean": 37.64,
+          "sum": 87369.5
+        },
+        {
+          "count": 594,
+          "mean": 33.97,
+          "sum": 20179.53
+        }
+      ],
+      "summary": {
+        "worst_hour": 9.0,
+        "worst_hour_avg_delay": 90.28
+      }
+    },
+    "peak_days": {
+      "ranking": [
+        {
+          "count": 18264,
+          "mean": 49.41,
+          "sum": 902406.05
+        },
+        {
+          "count": 17373,
+          "mean": 29.53,
+          "sum": 513090.48
+        },
+        {
+          "count": 18851,
+          "mean": 27.54,
+          "sum": 519089.45
+        },
+        {
+          "count": 4278,
+          "mean": 27.07,
+          "sum": 115795.03
+        },
+        {
+          "count": 17357,
+          "mean": 26.57,
+          "sum": 461227.02
+        },
+        {
+          "count": 17222,
+          "mean": 26.39,
+          "sum": 454509.35
+        },
+        {
+          "count": 5086,
+          "mean": -240499.13,
+          "sum": -1223178589.95
+        }
+      ],
+      "summary": {
+        "worst_day": "Wednesday",
+        "worst_day_avg_delay": 49.41
+      }
+    },
+    "peak_months": {
+      "ranking": [
+        {
+          "count": 5141,
+          "mean": 99.32,
+          "sum": 510615.02
+        },
+        {
+          "count": 9616,
+          "mean": 56.38,
+          "sum": 542173.98
+        },
+        {
+          "count": 8029,
+          "mean": 32.58,
+          "sum": 261546.98
+        },
+        {
+          "count": 10550,
+          "mean": 31.93,
+          "sum": 336816.88
+        },
+        {
+          "count": 11508,
+          "mean": 30.39,
+          "sum": 349677.58
+        },
+        {
+          "count": 11785,
+          "mean": 30.08,
+          "sum": 354473.77
+        },
+        {
+          "count": 7966,
+          "mean": 27.08,
+          "sum": 215755.9
+        },
+        {
+          "count": 11696,
+          "mean": 26.56,
+          "sum": 310602.6
+        },
+        {
+          "count": 5422,
+          "mean": 23.76,
+          "sum": 128821.08
+        },
+        {
+          "count": 5461,
+          "mean": 23.34,
+          "sum": 127451.68
+        },
+        {
+          "count": 4995,
+          "mean": 22.66,
+          "sum": 113181.77
+        },
+        {
+          "count": 6262,
+          "mean": -195379.05,
+          "sum": -1223463589.82
+        }
+      ],
+      "summary": {
+        "worst_month": 4.0,
+        "worst_month_avg_delay": 99.32
+      }
+    },
+    "bay_bottlenecks": {
+      "top_10": [
+        {
+          "DelayMinutes_count": 11418,
+          "DelayMinutes_mean": 51.35,
+          "DelayMinutes_sum": 586324.62,
+          "GrossQuantity_sum": 52369372.2
+        },
+        {
+          "DelayMinutes_count": 29214,
+          "DelayMinutes_mean": -4182.44,
+          "DelayMinutes_sum": -122185895.77,
+          "GrossQuantity_sum": 99210596.4
+        },
+        {
+          "DelayMinutes_count": 42559,
+          "DelayMinutes_mean": -14495.75,
+          "DelayMinutes_sum": -616924470.82,
+          "GrossQuantity_sum": 156886300.1
+        },
+        {
+          "DelayMinutes_count": 15240,
+          "DelayMinutes_mean": -31606.85,
+          "DelayMinutes_sum": -481688430.6,
+          "GrossQuantity_sum": 64916006.3
+        }
+      ],
+      "summary": {
+        "worst_bay": "LANE04",
+        "worst_bay_avg_delay": 51.35
+      }
+    },
+    "product_bottlenecks": {
+      "top_10": [
+        {
+          "DelayMinutes_count": 6774,
+          "DelayMinutes_mean": 68.65,
+          "DelayMinutes_sum": 465060.2,
+          "GrossQuantity_sum": 33319349.8
+        },
+        {
+          "DelayMinutes_count": 2286,
+          "DelayMinutes_mean": 45.86,
+          "DelayMinutes_sum": 104832.57,
+          "GrossQuantity_sum": 9208440.2
+        },
+        {
+          "DelayMinutes_count": 2151,
+          "DelayMinutes_mean": 23.38,
+          "DelayMinutes_sum": 50285.23,
+          "GrossQuantity_sum": 9031397.2
+        },
+        {
+          "DelayMinutes_count": 23545,
+          "DelayMinutes_mean": -7838.96,
+          "DelayMinutes_sum": -184568220.23,
+          "GrossQuantity_sum": 7034193.3
+        },
+        {
+          "DelayMinutes_count": 12680,
+          "DelayMinutes_mean": -9477.12,
+          "DelayMinutes_sum": -120169937.87,
+          "GrossQuantity_sum": 51076384.0
+        },
+        {
+          "DelayMinutes_count": 15760,
+          "DelayMinutes_mean": -11727.57,
+          "DelayMinutes_sum": -184826525.4,
+          "GrossQuantity_sum": 80056336.1
+        },
+        {
+          "DelayMinutes_count": 33271,
+          "DelayMinutes_mean": -20169.76,
+          "DelayMinutes_sum": -671068227.12,
+          "GrossQuantity_sum": 174833860.0
+        },
+        {
+          "DelayMinutes_count": 1964,
+          "DelayMinutes_mean": -30651.6,
+          "DelayMinutes_sum": -60199739.95,
+          "GrossQuantity_sum": 8822314.4
+        }
+      ],
+      "summary": {
+        "worst_product": 233285.0,
+        "worst_product_avg_delay": 68.65
+      }
+    }
+  },
+  "root_cause_analysis": {
+    "bay_analysis": {
+      "top_problematic_bays": [
+        {
+          "weighted_avg_delay": 53.83,
+          "total_quantity": 52369372.2,
+          "shipment_count": 11418.0,
+          "max_delay": 1576.27,
+          "delay_variance": 5790.57
+        },
+        {
+          "weighted_avg_delay": -10538.31,
+          "total_quantity": 99210596.4,
+          "shipment_count": 29214.0,
+          "max_delay": 47315.32,
+          "delay_variance": 260658165288.1
+        },
+        {
+          "weighted_avg_delay": -14165.97,
+          "total_quantity": 156886300.1,
+          "shipment_count": 42559.0,
+          "max_delay": 47315.32,
+          "delay_variance": 897643764927.87
+        },
+        {
+          "weighted_avg_delay": -34320.63,
+          "total_quantity": 64916006.3,
+          "shipment_count": 15240.0,
+          "max_delay": 9626.13,
+          "delay_variance": 1905032681081.14
+        }
+      ],
+      "summary": {
+        "worst_bay": "LANE04",
+        "worst_bay_weighted_delay": 53.83,
+        "total_bays_analyzed": 4
+      }
+    },
+    "product_analysis": {
+      "top_problematic_products": [
+        {
+          "weighted_avg_delay": 69.74,
+          "total_quantity": 33319349.8,
+          "shipment_count": 6774.0,
+          "max_delay": 605.92,
+          "delay_variance": 7470.35
+        },
+        {
+          "weighted_avg_delay": 39.11,
+          "total_quantity": 9208440.2,
+          "shipment_count": 2286.0,
+          "max_delay": 47315.32,
+          "delay_variance": 979158.22
+        },
+        {
+          "weighted_avg_delay": 23.39,
+          "total_quantity": 9031397.2,
+          "shipment_count": 2151.0,
+          "max_delay": 1576.27,
+          "delay_variance": 2169.86
+        },
+        {
+          "weighted_avg_delay": -6418.89,
+          "total_quantity": 7034193.3,
+          "shipment_count": 23545.0,
+          "max_delay": 47315.32,
+          "delay_variance": 486825608390.8
+        },
+        {
+          "weighted_avg_delay": -10590.69,
+          "total_quantity": 51076384.0,
+          "shipment_count": 12680.0,
+          "max_delay": 23612.63,
+          "delay_variance": 572629288942.71
+        },
+        {
+          "weighted_avg_delay": -10982.78,
+          "total_quantity": 80056336.1,
+          "shipment_count": 15760.0,
+          "max_delay": 47315.32,
+          "delay_variance": 727273107214.91
+        },
+        {
+          "weighted_avg_delay": -20460.86,
+          "total_quantity": 8822314.4,
+          "shipment_count": 1964.0,
+          "max_delay": 528.52,
+          "delay_variance": 1848653582103.95
+        },
+        {
+          "weighted_avg_delay": -22021.79,
+          "total_quantity": 174833860.0,
+          "shipment_count": 33271.0,
+          "max_delay": 47315.32,
+          "delay_variance": 1233533906749.31
+        }
+      ],
+      "summary": {
+        "worst_product": 233285.0,
+        "worst_product_weighted_delay": 69.74,
+        "total_products_analyzed": 8
+      }
+    },
+    "time_analysis": {
+      "worst_hours": [
+        {
+          "weighted_avg_delay": 75.78,
+          "total_quantity": 25080905.2,
+          "shipment_count": 6623.0
+        },
+        {
+          "weighted_avg_delay": 75.32,
+          "total_quantity": 17786480.6,
+          "shipment_count": 4846.0
+        },
+        {
+          "weighted_avg_delay": 42.31,
+          "total_quantity": 20331122.1,
+          "shipment_count": 5191.0
+        },
+        {
+          "weighted_avg_delay": 36.24,
+          "total_quantity": 2344032.4,
+          "shipment_count": 594.0
+        },
+        {
+          "weighted_avg_delay": 33.99,
+          "total_quantity": 20823201.1,
+          "shipment_count": 5295.0
+        }
+      ],
+      "worst_days": [
+        {
+          "weighted_avg_delay": 43.74,
+          "total_quantity": 68690139.2,
+          "shipment_count": 18264.0
+        },
+        {
+          "weighted_avg_delay": 28.53,
+          "total_quantity": 71686934.1,
+          "shipment_count": 18851.0
+        },
+        {
+          "weighted_avg_delay": 28.28,
+          "total_quantity": 65794621.7,
+          "shipment_count": 17373.0
+        },
+        {
+          "weighted_avg_delay": 27.55,
+          "total_quantity": 66538886.1,
+          "shipment_count": 17357.0
+        },
+        {
+          "weighted_avg_delay": 27.41,
+          "total_quantity": 15828114.6,
+          "shipment_count": 4278.0
+        },
+        {
+          "weighted_avg_delay": 27.32,
+          "total_quantity": 65359252.7,
+          "shipment_count": 17222.0
+        },
+        {
+          "weighted_avg_delay": -282486.57,
+          "total_quantity": 19484326.6,
+          "shipment_count": 5086.0
+        }
+      ],
+      "summary": {
+        "worst_hour": 9.0,
+        "worst_day": "Wednesday"
+      }
+    }
+  },
+  "optimization_recommendations": [
+    {
+      "category": "Bay Optimization",
+      "priority": "High",
+      "recommendation": "Focus on Bay LANE04 - highest weighted delay of 53.83 minutes",
+      "impact": "High",
+      "action": "Investigate resource allocation, staffing, or equipment issues in this bay"
+    },
+    {
+      "category": "Product Handling",
+      "priority": "High",
+      "recommendation": "Review handling procedures for Product 233285.0 - 69.74 min avg delay",
+      "impact": "High",
+      "action": "Analyze product-specific workflow and consider specialized handling"
+    },
+    {
+      "category": "Scheduling Optimization",
+      "priority": "Medium",
+      "recommendation": "Optimize operations during hour 9.0 - peak delay period",
+      "impact": "Medium",
+      "action": "Consider shift scheduling or resource allocation during peak delay hours"
+    },
+    {
+      "category": "Weekly Planning",
+      "priority": "Medium",
+      "recommendation": "Review Wednesday operations - highest delay day",
+      "impact": "Medium",
+      "action": "Analyze staffing and resource planning for this day of the week"
+    }
+  ],
+  "summary_insights": {
+    "primary_bottleneck": "LANE04",
+    "primary_delay_factor": 233285.0,
+    "peak_delay_time": 9.0,
+    "overall_delay_percentage": 99.40705872845916
+  }
+}
