@@ -467,6 +467,231 @@ app.get('/api/shipments/aggregated', async (req, res) => {
     }
 });
 
+// Insights API endpoints - integrate with Flask Ollama API
+app.post('/api/insights/query', async (req, res) => {
+    try {
+        const { query } = req.body;
+        
+        if (!query) {
+            return res.status(400).json({
+                success: false,
+                error: 'Query parameter is required'
+            });
+        }
+        
+        console.log(`🔍 Processing insights query: "${query}"`);
+        
+        // Call Flask insights API
+        const flaskApiUrl = 'http://localhost:5000/insights/query';
+        
+        try {
+            const flaskResponse = await axios.post(flaskApiUrl, {
+                query: query
+            }, {
+                timeout: 100000, // 100 second timeout
+                headers: {
+                    'Content-Type': 'application/json'
+                }
+            });
+            
+            if (flaskResponse.data.success) {
+                const { query_identifier, sql_query, description } = flaskResponse.data;
+                console.log('✅ Flask insights response:', { query_identifier, description });
+                
+                // Execute the SQL query using our database
+                try {
+                    const queryResults = await runQuery(sql_query);
+                    console.log(`📊 Query executed successfully, returned ${queryResults.length} rows`);
+                    
+                    res.json({
+                        success: true,
+                        query: query,
+                        query_identifier: query_identifier,
+                        description: description,
+                        sql_query: sql_query,
+                        data: queryResults,
+                        count: queryResults.length,
+                        source: 'flask-ollama-database'
+                    });
+                } catch (dbError) {
+                    console.error('❌ Database query execution failed:', dbError.message);
+                    res.status(500).json({
+                        success: false,
+                        error: `Database query execution failed: ${dbError.message}`,
+                        query: query,
+                        sql_query: sql_query,
+                        query_identifier: query_identifier
+                    });
+                }
+            } else {
+                console.error('❌ Flask insights API returned error:', flaskResponse.data.error);
+                res.status(500).json({
+                    success: false,
+                    error: `Flask insights API error: ${flaskResponse.data.error}`,
+                    query: query
+                });
+            }
+        } catch (flaskError) {
+            console.error('❌ Flask insights API call failed:', flaskError.message);
+            res.status(500).json({
+                success: false,
+                error: `Flask insights API unavailable: ${flaskError.message}`,
+                query: query
+            });
+        }
+        
+    } catch (error) {
+        console.error('Error processing insights query:', error);
+        res.status(500).json({
+            success: false,
+            error: error.message
+        });
+    }
+});
+
+app.get('/api/insights/queries', async (req, res) => {
+    try {
+        console.log('📋 Fetching available insights queries...');
+        
+        // Call Flask API to get available queries
+        const flaskApiUrl = 'http://localhost:5000/insights/queries';
+        
+        try {
+            const flaskResponse = await axios.get(flaskApiUrl, {
+                timeout: 10000, // 10 second timeout
+                headers: {
+                    'Content-Type': 'application/json'
+                }
+            });
+            
+            if (flaskResponse.data.success) {
+                console.log('✅ Retrieved insights queries from Flask API');
+                res.json({
+                    success: true,
+                    queries: flaskResponse.data.queries,
+                    total_count: flaskResponse.data.total_count,
+                    source: 'flask-ollama'
+                });
+            } else {
+                console.error('❌ Flask API returned error:', flaskResponse.data.error);
+                res.status(500).json({
+                    success: false,
+                    error: `Flask API error: ${flaskResponse.data.error}`
+                });
+            }
+        } catch (flaskError) {
+            console.error('❌ Flask API call failed:', flaskError.message);
+            res.status(500).json({
+                success: false,
+                error: `Flask API unavailable: ${flaskError.message}`
+            });
+        }
+        
+    } catch (error) {
+        console.error('Error fetching insights queries:', error);
+        res.status(500).json({
+            success: false,
+            error: error.message
+        });
+    }
+});
+
+app.post('/api/insights/execute', async (req, res) => {
+    try {
+        const { query_identifier, sql_query } = req.body;
+        
+        if (!query_identifier && !sql_query) {
+            return res.status(400).json({
+                success: false,
+                error: 'Either query_identifier or sql_query is required'
+            });
+        }
+        
+        let finalSqlQuery = sql_query;
+        
+        // If only query_identifier is provided, get the SQL from Flask API
+        if (!sql_query && query_identifier) {
+            console.log(`🔍 Getting SQL for query identifier: ${query_identifier}`);
+            
+            const flaskApiUrl = 'http://localhost:5000/insights/queries';
+            
+            try {
+                const flaskResponse = await axios.get(flaskApiUrl, {
+                    timeout: 10000,
+                    headers: {
+                        'Content-Type': 'application/json'
+                    }
+                });
+                
+                if (flaskResponse.data.success) {
+                    const targetQuery = flaskResponse.data.queries.find(
+                        q => q.identifier === query_identifier
+                    );
+                    
+                    if (targetQuery) {
+                        finalSqlQuery = targetQuery.sql_query;
+                        console.log('✅ Retrieved SQL query from Flask API');
+                    } else {
+                        return res.status(400).json({
+                            success: false,
+                            error: `Query identifier '${query_identifier}' not found`
+                        });
+                    }
+                } else {
+                    return res.status(500).json({
+                        success: false,
+                        error: `Flask API error: ${flaskResponse.data.error}`
+                    });
+                }
+            } catch (flaskError) {
+                return res.status(500).json({
+                    success: false,
+                    error: `Flask API unavailable: ${flaskError.message}`
+                });
+            }
+        }
+        
+        if (!finalSqlQuery) {
+            return res.status(400).json({
+                success: false,
+                error: 'No SQL query available to execute'
+            });
+        }
+        
+        console.log(`📊 Executing SQL query: ${finalSqlQuery.substring(0, 100)}...`);
+        
+        // Execute the SQL query using our database
+        try {
+            const queryResults = await runQuery(finalSqlQuery);
+            console.log(`✅ Query executed successfully, returned ${queryResults.length} rows`);
+            
+            res.json({
+                success: true,
+                query_identifier: query_identifier,
+                sql_query: finalSqlQuery,
+                data: queryResults,
+                count: queryResults.length,
+                source: 'direct-execution'
+            });
+        } catch (dbError) {
+            console.error('❌ Database query execution failed:', dbError.message);
+            res.status(500).json({
+                success: false,
+                error: `Database query execution failed: ${dbError.message}`,
+                sql_query: finalSqlQuery,
+                query_identifier: query_identifier
+            });
+        }
+        
+    } catch (error) {
+        console.error('Error executing insights query:', error);
+        res.status(500).json({
+            success: false,
+            error: error.message
+        });
+    }
+});
+
 // Layout persistence endpoints
 app.get('/api/layout', async (req, res) => {
     try {
@@ -562,6 +787,9 @@ const startServer = async () => {
             console.log(`📈 Chart Data: http://localhost:${PORT}/api/shipments/chart-data?xAxis=BayCode&yAxis=GrossQuantity`);
             console.log(`📋 Available Columns: http://localhost:${PORT}/api/shipments/columns`);
             console.log(`📊 Aggregated Data: http://localhost:${PORT}/api/shipments/aggregated?xAxis=BaseProductCode&yAxis=GrossQuantity&aggregation=SUM`);
+            console.log(`🔍 Insights Query: http://localhost:${PORT}/api/insights/query`);
+            console.log(`📋 Available Insights: http://localhost:${PORT}/api/insights/queries`);
+            console.log(`⚡ Execute Insights: http://localhost:${PORT}/api/insights/execute`);
         });
     } catch (error) {
         console.error('❌ Failed to start server:', error);
