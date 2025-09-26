@@ -1,0 +1,763 @@
+{
+  "analysis_metadata": {
+    "analysis_date": "2025-09-27T02:40:03.077938",
+    "total_records": 98403,
+    "date_range": {
+      "start": "2016-05-21T07:47:26",
+      "end": "2017-11-07T21:54:07"
+    },
+    "data_quality": {
+      "missing_scheduled_dates": 0,
+      "missing_exit_times": 0,
+      "negative_delays": 0
+    }
+  },
+  "overall_statistics": {
+    "overall_stats": {
+      "total_shipments": 98403,
+      "average_delay_minutes": 30.64,
+      "median_delay_minutes": 19.82,
+      "max_delay_minutes": 23612.63,
+      "min_delay_minutes": 3.4,
+      "std_delay_minutes": 268.08,
+      "on_time_percentage": 0.0,
+      "delayed_shipments": 98403,
+      "early_shipments": 0
+    },
+    "delay_distribution": {
+      "OnTime": 80292,
+      "MinorDelay": 14479,
+      "MajorDelay": 2404,
+      "ModerateDelay": 1228,
+      "Early": 0
+    },
+    "delay_percentiles": {
+      "p25": 15.25,
+      "p50": 19.82,
+      "p75": 26.43,
+      "p90": 37.63,
+      "p95": 47.32,
+      "p99": 233.17
+    }
+  },
+  "bay_analysis": {
+    "LANE04": {
+      "shipment_count": 11418,
+      "avg_delay": 51.35,
+      "median_delay": 33.81,
+      "std_delay": 76.1,
+      "max_delay": 1576.27,
+      "min_delay": 3.4,
+      "unique_shipments": 2089,
+      "delay_rate_percentage": 100.0
+    },
+    "LANE02": {
+      "shipment_count": 29208,
+      "avg_delay": 35.45,
+      "median_delay": 20.42,
+      "std_delay": 481.63,
+      "max_delay": 23612.63,
+      "min_delay": 4.33,
+      "unique_shipments": 4133,
+      "delay_rate_percentage": 100.0
+    },
+    "LANE01": {
+      "shipment_count": 42545,
+      "avg_delay": 24.34,
+      "median_delay": 18.35,
+      "std_delay": 53.23,
+      "max_delay": 4009.05,
+      "min_delay": 4.65,
+      "unique_shipments": 6614,
+      "delay_rate_percentage": 100.0
+    },
+    "LANE03": {
+      "shipment_count": 15232,
+      "avg_delay": 23.46,
+      "median_delay": 19.77,
+      "std_delay": 81.95,
+      "max_delay": 9626.13,
+      "min_delay": 3.72,
+      "unique_shipments": 3236,
+      "delay_rate_percentage": 100.0
+    }
+  },
+  "product_analysis": {
+    "233285.0": {
+      "shipment_count": 6774,
+      "avg_delay": 68.65,
+      "median_delay": 39.42,
+      "std_delay": 86.43,
+      "max_delay": 605.92,
+      "min_delay": 4.52,
+      "unique_shipments": 1175,
+      "delay_rate_percentage": 100.0
+    },
+    "210404.0": {
+      "shipment_count": 15755,
+      "avg_delay": 33.24,
+      "median_delay": 19.12,
+      "std_delay": 426.05,
+      "max_delay": 23612.63,
+      "min_delay": 4.37,
+      "unique_shipments": 7626,
+      "delay_rate_percentage": 100.0
+    },
+    "210403.0": {
+      "shipment_count": 23538,
+      "avg_delay": 29.2,
+      "median_delay": 18.95,
+      "std_delay": 348.75,
+      "max_delay": 23612.63,
+      "min_delay": 4.37,
+      "unique_shipments": 8772,
+      "delay_rate_percentage": 100.0
+    },
+    "231384.0": {
+      "shipment_count": 1963,
+      "avg_delay": 28.52,
+      "median_delay": 24.77,
+      "std_delay": 31.25,
+      "max_delay": 528.52,
+      "min_delay": 4.43,
+      "unique_shipments": 775,
+      "delay_rate_percentage": 100.0
+    },
+    "231231.0": {
+      "shipment_count": 12678,
+      "avg_delay": 26.94,
+      "median_delay": 19.37,
+      "std_delay": 309.95,
+      "max_delay": 23612.63,
+      "min_delay": 3.4,
+      "unique_shipments": 4669,
+      "delay_rate_percentage": 100.0
+    },
+    "210405.0": {
+      "shipment_count": 2285,
+      "avg_delay": 25.17,
+      "median_delay": 19.22,
+      "std_delay": 29.57,
+      "max_delay": 422.2,
+      "min_delay": 6.07,
+      "unique_shipments": 2062,
+      "delay_rate_percentage": 100.0
+    },
+    "231245.0": {
+      "shipment_count": 33259,
+      "avg_delay": 25.06,
+      "median_delay": 19.5,
+      "std_delay": 42.91,
+      "max_delay": 4009.05,
+      "min_delay": 3.85,
+      "unique_shipments": 12404,
+      "delay_rate_percentage": 100.0
+    },
+    "231380.0": {
+      "shipment_count": 2151,
+      "avg_delay": 23.38,
+      "median_delay": 17.83,
+      "std_delay": 46.58,
+      "max_delay": 1576.27,
+      "min_delay": 3.72,
+      "unique_shipments": 1262,
+      "delay_rate_percentage": 100.0
+    }
+  },
+  "time_pattern_analysis": {
+    "hourly": {
+      "0": {
+        "shipment_count": 1545,
+        "avg_delay": 23.88,
+        "median_delay": 19.9,
+        "std_delay": 22.47,
+        "unique_shipments": 246
+      },
+      "1": {
+        "shipment_count": 1282,
+        "avg_delay": 25.85,
+        "median_delay": 23.4,
+        "std_delay": 11.76,
+        "unique_shipments": 190
+      },
+      "2": {
+        "shipment_count": 594,
+        "avg_delay": 33.97,
+        "median_delay": 25.0,
+        "std_delay": 55.98,
+        "unique_shipments": 85
+      },
+      "3": {
+        "shipment_count": 1029,
+        "avg_delay": 21.6,
+        "median_delay": 16.43,
+        "std_delay": 17.23,
+        "unique_shipments": 123
+      },
+      "4": {
+        "shipment_count": 4475,
+        "avg_delay": 19.2,
+        "median_delay": 16.62,
+        "std_delay": 14.52,
+        "unique_shipments": 720
+      },
+      "5": {
+        "shipment_count": 13048,
+        "avg_delay": 24.96,
+        "median_delay": 21.97,
+        "std_delay": 35.81,
+        "unique_shipments": 2187
+      },
+      "6": {
+        "shipment_count": 9109,
+        "avg_delay": 32.86,
+        "median_delay": 21.93,
+        "std_delay": 106.51,
+        "unique_shipments": 1525
+      },
+      "7": {
+        "shipment_count": 5295,
+        "avg_delay": 32.68,
+        "median_delay": 21.78,
+        "std_delay": 41.63,
+        "unique_shipments": 893
+      },
+      "8": {
+        "shipment_count": 5191,
+        "avg_delay": 40.64,
+        "median_delay": 19.97,
+        "std_delay": 75.03,
+        "unique_shipments": 904
+      },
+      "9": {
+        "shipment_count": 6615,
+        "avg_delay": 33.16,
+        "median_delay": 19.7,
+        "std_delay": 62.53,
+        "unique_shipments": 1077
+      },
+      "10": {
+        "shipment_count": 5568,
+        "avg_delay": 29.56,
+        "median_delay": 18.74,
+        "std_delay": 50.5,
+        "unique_shipments": 885
+      },
+      "11": {
+        "shipment_count": 4847,
+        "avg_delay": 28.02,
+        "median_delay": 19.22,
+        "std_delay": 49.55,
+        "unique_shipments": 801
+      },
+      "12": {
+        "shipment_count": 5242,
+        "avg_delay": 26.89,
+        "median_delay": 18.18,
+        "std_delay": 54.07,
+        "unique_shipments": 828
+      },
+      "13": {
+        "shipment_count": 4846,
+        "avg_delay": 81.16,
+        "median_delay": 18.07,
+        "std_delay": 1172.9,
+        "unique_shipments": 775
+      },
+      "14": {
+        "shipment_count": 3248,
+        "avg_delay": 24.9,
+        "median_delay": 18.25,
+        "std_delay": 34.74,
+        "unique_shipments": 539
+      },
+      "15": {
+        "shipment_count": 1679,
+        "avg_delay": 28.33,
+        "median_delay": 18.97,
+        "std_delay": 46.73,
+        "unique_shipments": 270
+      },
+      "16": {
+        "shipment_count": 2321,
+        "avg_delay": 37.64,
+        "median_delay": 19.0,
+        "std_delay": 248.37,
+        "unique_shipments": 382
+      },
+      "17": {
+        "shipment_count": 5183,
+        "avg_delay": 22.28,
+        "median_delay": 20.55,
+        "std_delay": 12.8,
+        "unique_shipments": 814
+      },
+      "18": {
+        "shipment_count": 2938,
+        "avg_delay": 23.68,
+        "median_delay": 20.65,
+        "std_delay": 10.8,
+        "unique_shipments": 460
+      },
+      "19": {
+        "shipment_count": 2258,
+        "avg_delay": 23.26,
+        "median_delay": 18.72,
+        "std_delay": 16.12,
+        "unique_shipments": 367
+      },
+      "20": {
+        "shipment_count": 2650,
+        "avg_delay": 21.27,
+        "median_delay": 18.72,
+        "std_delay": 18.62,
+        "unique_shipments": 420
+      },
+      "21": {
+        "shipment_count": 3277,
+        "avg_delay": 23.98,
+        "median_delay": 19.73,
+        "std_delay": 25.05,
+        "unique_shipments": 487
+      },
+      "22": {
+        "shipment_count": 3448,
+        "avg_delay": 27.8,
+        "median_delay": 20.37,
+        "std_delay": 34.94,
+        "unique_shipments": 523
+      },
+      "23": {
+        "shipment_count": 2715,
+        "avg_delay": 25.49,
+        "median_delay": 20.3,
+        "std_delay": 24.97,
+        "unique_shipments": 417
+      }
+    },
+    "daily": {
+      "Friday": {
+        "shipment_count": 17222,
+        "avg_delay": 26.39,
+        "median_delay": 19.65,
+        "std_delay": 39.72,
+        "unique_shipments": 2793
+      },
+      "Monday": {
+        "shipment_count": 17357,
+        "avg_delay": 26.57,
+        "median_delay": 19.85,
+        "std_delay": 34.29,
+        "unique_shipments": 2846
+      },
+      "Saturday": {
+        "shipment_count": 5066,
+        "avg_delay": 84.33,
+        "median_delay": 20.43,
+        "std_delay": 1147.11,
+        "unique_shipments": 850
+      },
+      "Sunday": {
+        "shipment_count": 4278,
+        "avg_delay": 27.07,
+        "median_delay": 20.37,
+        "std_delay": 28.25,
+        "unique_shipments": 682
+      },
+      "Thursday": {
+        "shipment_count": 17373,
+        "avg_delay": 29.53,
+        "median_delay": 19.88,
+        "std_delay": 99.66,
+        "unique_shipments": 2775
+      },
+      "Tuesday": {
+        "shipment_count": 18851,
+        "avg_delay": 27.54,
+        "median_delay": 19.93,
+        "std_delay": 38.52,
+        "unique_shipments": 3007
+      },
+      "Wednesday": {
+        "shipment_count": 18256,
+        "avg_delay": 28.7,
+        "median_delay": 19.63,
+        "std_delay": 87.65,
+        "unique_shipments": 2965
+      }
+    },
+    "monthly": {
+      "1": {
+        "shipment_count": 5461,
+        "avg_delay": 23.34,
+        "median_delay": 19.7,
+        "std_delay": 32.65,
+        "unique_shipments": 897
+      },
+      "2": {
+        "shipment_count": 4995,
+        "avg_delay": 22.66,
+        "median_delay": 20.02,
+        "std_delay": 12.45,
+        "unique_shipments": 828
+      },
+      "3": {
+        "shipment_count": 5422,
+        "avg_delay": 23.76,
+        "median_delay": 19.95,
+        "std_delay": 27.23,
+        "unique_shipments": 918
+      },
+      "4": {
+        "shipment_count": 5133,
+        "avg_delay": 25.73,
+        "median_delay": 21.32,
+        "std_delay": 41.3,
+        "unique_shipments": 852
+      },
+      "5": {
+        "shipment_count": 7966,
+        "avg_delay": 27.08,
+        "median_delay": 20.0,
+        "std_delay": 110.94,
+        "unique_shipments": 1281
+      },
+      "6": {
+        "shipment_count": 10550,
+        "avg_delay": 31.93,
+        "median_delay": 19.87,
+        "std_delay": 127.01,
+        "unique_shipments": 1701
+      },
+      "7": {
+        "shipment_count": 9616,
+        "avg_delay": 56.38,
+        "median_delay": 21.05,
+        "std_delay": 833.23,
+        "unique_shipments": 1512
+      },
+      "8": {
+        "shipment_count": 11696,
+        "avg_delay": 26.56,
+        "median_delay": 19.6,
+        "std_delay": 34.45,
+        "unique_shipments": 1891
+      },
+      "9": {
+        "shipment_count": 11785,
+        "avg_delay": 30.08,
+        "median_delay": 19.73,
+        "std_delay": 49.55,
+        "unique_shipments": 1885
+      },
+      "10": {
+        "shipment_count": 11508,
+        "avg_delay": 30.39,
+        "median_delay": 18.8,
+        "std_delay": 52.56,
+        "unique_shipments": 1885
+      },
+      "11": {
+        "shipment_count": 8029,
+        "avg_delay": 32.58,
+        "median_delay": 19.27,
+        "std_delay": 55.78,
+        "unique_shipments": 1261
+      },
+      "12": {
+        "shipment_count": 6242,
+        "avg_delay": 22.78,
+        "median_delay": 19.67,
+        "std_delay": 14.57,
+        "unique_shipments": 1007
+      }
+    }
+  },
+  "bottleneck_analysis": {
+    "worst_bay_product_combinations": {
+      "LANE04_233285.0": {
+        "bay": "LANE04",
+        "product": "233285.0",
+        "shipment_count": 6774,
+        "avg_delay": 68.65,
+        "std_delay": 86.43,
+        "unique_shipments": 1175
+      },
+      "LANE02_231231.0": {
+        "bay": "LANE02",
+        "product": "231231.0",
+        "shipment_count": 1955,
+        "avg_delay": 49.2,
+        "std_delay": 756.63,
+        "unique_shipments": 836
+      },
+      "LANE02_210404.0": {
+        "bay": "LANE02",
+        "product": "210404.0",
+        "shipment_count": 6616,
+        "avg_delay": 44.31,
+        "std_delay": 652.58,
+        "unique_shipments": 2873
+      },
+      "LANE02_210403.0": {
+        "bay": "LANE02",
+        "product": "210403.0",
+        "shipment_count": 9024,
+        "avg_delay": 38.31,
+        "std_delay": 558.94,
+        "unique_shipments": 3152
+      },
+      "LANE04_231384.0": {
+        "bay": "LANE04",
+        "product": "231384.0",
+        "shipment_count": 301,
+        "avg_delay": 31.99,
+        "std_delay": 34.69,
+        "unique_shipments": 163
+      },
+      "LANE03_231384.0": {
+        "bay": "LANE03",
+        "product": "231384.0",
+        "shipment_count": 1662,
+        "avg_delay": 27.89,
+        "std_delay": 30.55,
+        "unique_shipments": 613
+      },
+      "LANE04_231245.0": {
+        "bay": "LANE04",
+        "product": "231245.0",
+        "shipment_count": 1190,
+        "avg_delay": 27.17,
+        "std_delay": 67.87,
+        "unique_shipments": 710
+      },
+      "LANE02_210405.0": {
+        "bay": "LANE02",
+        "product": "210405.0",
+        "shipment_count": 905,
+        "avg_delay": 26.58,
+        "std_delay": 32.35,
+        "unique_shipments": 792
+      },
+      "LANE04_231380.0": {
+        "bay": "LANE04",
+        "product": "231380.0",
+        "shipment_count": 1005,
+        "avg_delay": 26.31,
+        "std_delay": 59.33,
+        "unique_shipments": 463
+      },
+      "LANE02_231245.0": {
+        "bay": "LANE02",
+        "product": "231245.0",
+        "shipment_count": 10708,
+        "avg_delay": 25.82,
+        "std_delay": 40.42,
+        "unique_shipments": 3616
+      },
+      "LANE01_210404.0": {
+        "bay": "LANE01",
+        "product": "210404.0",
+        "shipment_count": 9139,
+        "avg_delay": 25.22,
+        "std_delay": 67.15,
+        "unique_shipments": 4763
+      },
+      "LANE04_231231.0": {
+        "bay": "LANE04",
+        "product": "231231.0",
+        "shipment_count": 2148,
+        "avg_delay": 24.61,
+        "std_delay": 23.05,
+        "unique_shipments": 1034
+      },
+      "LANE03_231245.0": {
+        "bay": "LANE03",
+        "product": "231245.0",
+        "shipment_count": 3849,
+        "avg_delay": 24.6,
+        "std_delay": 26.03,
+        "unique_shipments": 2078
+      },
+      "LANE01_231245.0": {
+        "bay": "LANE01",
+        "product": "231245.0",
+        "shipment_count": 17512,
+        "avg_delay": 24.56,
+        "std_delay": 45.11,
+        "unique_shipments": 6015
+      },
+      "LANE01_210405.0": {
+        "bay": "LANE01",
+        "product": "210405.0",
+        "shipment_count": 1380,
+        "avg_delay": 24.25,
+        "std_delay": 27.57,
+        "unique_shipments": 1271
+      },
+      "LANE01_210403.0": {
+        "bay": "LANE01",
+        "product": "210403.0",
+        "shipment_count": 14514,
+        "avg_delay": 23.54,
+        "std_delay": 54.2,
+        "unique_shipments": 5633
+      },
+      "LANE03_231231.0": {
+        "bay": "LANE03",
+        "product": "231231.0",
+        "shipment_count": 8575,
+        "avg_delay": 22.44,
+        "std_delay": 106.34,
+        "unique_shipments": 2809
+      },
+      "LANE03_231380.0": {
+        "bay": "LANE03",
+        "product": "231380.0",
+        "shipment_count": 1146,
+        "avg_delay": 20.8,
+        "std_delay": 31.2,
+        "unique_shipments": 800
+      }
+    },
+    "problematic_hours": {
+      "13": {
+        "count": 4846,
+        "mean": 81.16
+      },
+      "8": {
+        "count": 5191,
+        "mean": 40.64
+      },
+      "16": {
+        "count": 2321,
+        "mean": 37.64
+      },
+      "2": {
+        "count": 594,
+        "mean": 33.97
+      },
+      "9": {
+        "count": 6615,
+        "mean": 33.16
+      },
+      "6": {
+        "count": 9109,
+        "mean": 32.86
+      },
+      "7": {
+        "count": 5295,
+        "mean": 32.68
+      },
+      "10": {
+        "count": 5568,
+        "mean": 29.56
+      },
+      "15": {
+        "count": 1679,
+        "mean": 28.33
+      },
+      "11": {
+        "count": 4847,
+        "mean": 28.02
+      }
+    },
+    "problematic_days": {
+      "Saturday": {
+        "count": 5066,
+        "mean": 84.33
+      },
+      "Thursday": {
+        "count": 17373,
+        "mean": 29.53
+      },
+      "Wednesday": {
+        "count": 18256,
+        "mean": 28.7
+      },
+      "Tuesday": {
+        "count": 18851,
+        "mean": 27.54
+      },
+      "Sunday": {
+        "count": 4278,
+        "mean": 27.07
+      },
+      "Monday": {
+        "count": 17357,
+        "mean": 26.57
+      },
+      "Friday": {
+        "count": 17222,
+        "mean": 26.39
+      }
+    }
+  },
+  "weighted_analysis": {
+    "bay_weighted_averages": {
+      "LANE01": 88.97,
+      "LANE02": 6435.08,
+      "LANE03": 52.49,
+      "LANE04": 166.66
+    },
+    "product_weighted_averages": {
+      "210403.0": 4318.28,
+      "210404.0": 6249.85,
+      "210405.0": 56.86,
+      "231231.0": 3727.52,
+      "231245.0": 97.5,
+      "231380.0": 127.49,
+      "231384.0": 64.32,
+      "233285.0": 180.13
+    },
+    "hourly_weighted_averages": {
+      "0": 53.88,
+      "1": 32.06,
+      "2": 143.53,
+      "3": 33.02,
+      "4": 30.1,
+      "5": 88.58,
+      "6": 73.63,
+      "7": 90.45,
+      "8": 180.19,
+      "9": 164.55,
+      "10": 127.79,
+      "11": 131.91,
+      "12": 148.13,
+      "13": 16254.83,
+      "14": 84.37,
+      "15": 106.01,
+      "16": 466.95,
+      "17": 28.54,
+      "18": 28.93,
+      "19": 30.98,
+      "20": 39.62,
+      "21": 46.58,
+      "22": 57.78,
+      "23": 46.12
+    }
+  },
+  "recommendations": [
+    {
+      "category": "Overall Performance",
+      "priority": "High",
+      "recommendation": "Only 0.0% of shipments are on time. Implement comprehensive delay reduction strategy.",
+      "impact": "High"
+    },
+    {
+      "category": "Time Optimization",
+      "priority": "Medium",
+      "recommendation": "Hour 13:00 has average delay of 81.2 minutes. Consider resource reallocation during peak delay hours.",
+      "impact": "Medium",
+      "hour": "13"
+    }
+  ],
+  "summary": {
+    "worst_performing_bay": "LANE04",
+    "worst_performing_product": "233285.0",
+    "worst_performing_hour": "13",
+    "worst_performing_day": "Saturday",
+    "total_delay_hours": 50246.95,
+    "cost_impact_estimate": "Estimated cost impact: 2512348 hours of delay time"
+  }
+}

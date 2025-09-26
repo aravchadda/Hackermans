@@ -19,7 +19,7 @@ const ChartExamples = () => {
                         xField="department"
                         yField="salary"
                         title="Salary by Department"
-                        height={250}
+                        height={350}
                     />
                 </div>
 
@@ -30,7 +30,7 @@ const ChartExamples = () => {
                         xField="name"
                         yField="experience"
                         title="Experience Trends"
-                        height={250}
+                        height={350}
                         fillArea={true}
                     />
                 </div>
@@ -42,7 +42,7 @@ const ChartExamples = () => {
                         labelField="department"
                         valueField="name"
                         title="Department Distribution"
-                        height={250}
+                        height={350}
                     />
                 </div>
 
@@ -53,7 +53,7 @@ const ChartExamples = () => {
                         xField="experience"
                         yField="salary"
                         title="Salary vs Experience"
-                        height={250}
+                        height={350}
                     />
                 </div>
             </div>

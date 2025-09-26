@@ -53,10 +53,33 @@ export const apiService = {
       if (filters.yMax !== undefined && filters.yMax !== '') params.yMax = filters.yMax;
       
       const response = await apiClient.get('/shipments/chart-data', { params });
-      return response.data.success ? response.data.data : [];
+      return response.data.success ? response.data : { data: [], isMultiValue: false, yAxes: [] };
     } catch (error) {
       console.error('Error fetching chart data:', error);
-      return [];
+      return { data: [], isMultiValue: false, yAxes: [] };
+    }
+  },
+
+  // Get chart data with multiple y-axis fields
+  async getMultiValueChartData(xAxis, yAxes, chartType, limit = 1000, filters = {}) {
+    try {
+      const params = {
+        xAxis,
+        yAxes: Array.isArray(yAxes) ? yAxes.join(',') : yAxes,
+        limit
+      };
+      
+      // Add range filters if provided
+      if (filters.xMin !== undefined && filters.xMin !== '') params.xMin = filters.xMin;
+      if (filters.xMax !== undefined && filters.xMax !== '') params.xMax = filters.xMax;
+      if (filters.yMin !== undefined && filters.yMin !== '') params.yMin = filters.yMin;
+      if (filters.yMax !== undefined && filters.yMax !== '') params.yMax = filters.yMax;
+      
+      const response = await apiClient.get('/shipments/chart-data', { params });
+      return response.data.success ? response.data : { data: [], isMultiValue: false, yAxes: [] };
+    } catch (error) {
+      console.error('Error fetching multi-value chart data:', error);
+      return { data: [], isMultiValue: false, yAxes: [] };
     }
   },
 

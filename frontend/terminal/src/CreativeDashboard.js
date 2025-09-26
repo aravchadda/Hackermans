@@ -30,11 +30,14 @@ const CreativeDashboard = ({ mode: initialMode = "view", userRole = "operator" }
 
   const handleUpdateChart = (chartConfig) => {
     // This will be passed to DashboardCanvas to update the chart
-    console.log('Updating chart from chatbot:', chartConfig);
+    console.log('CreativeDashboard: Updating chart from chatbot:', chartConfig);
     
     // Call the global function to update the chart
     if (window.updateChartFromChatbot) {
+      console.log('CreativeDashboard: Calling window.updateChartFromChatbot');
       window.updateChartFromChatbot(chartConfig);
+    } else {
+      console.error('CreativeDashboard: window.updateChartFromChatbot not found!');
     }
   };
 
@@ -49,7 +52,13 @@ const CreativeDashboard = ({ mode: initialMode = "view", userRole = "operator" }
       />
       <div className="flex-1 flex min-h-0">
         <ChartSidebar isVisible={mode === "design"} />
-        <DashboardCanvas mode={mode} onCreateChart={handleCreateChart} onDeleteChart={handleDeleteChart} onUpdateChart={handleUpdateChart} />
+        <DashboardCanvas 
+          mode={mode} 
+          showChat={showChat}
+          onCreateChart={handleCreateChart} 
+          onDeleteChart={handleDeleteChart} 
+          onUpdateChart={handleUpdateChart} 
+        />
         <ChatBox 
           isVisible={showChat} 
           onClose={() => setShowChat(false)} 
