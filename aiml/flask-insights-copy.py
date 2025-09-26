@@ -21,8 +21,8 @@ logger = logging.getLogger(__name__)
 OLLAMA_URL = "http://localhost:11434"
 MODEL_NAME = "phi3.5:latest"  # Using available model
 
-# System prompt template for the LLM
-SYSTEM_PROMPT_TEMPLATE = """You are a JSON generator for chart/graph operations. Convert natural language requests into valid JSON for chart manipulation.
+# System prompt for the LLM
+SYSTEM_PROMPT = """You are a JSON generator for chart/graph operations. Convert natural language requests into valid JSON for chart manipulation.
 Rules:
 
 ALWAYS return ONLY valid JSON, no explanations or markdown
@@ -32,18 +32,16 @@ For delete operations, only plotName and operation are required
 Based on your understanding, assign the size value to "small", "medium", or "large"
 Default to "medium" size and "bar" chart if not specified
 Do not put the same column name for xAxis and yAxis
-Already existing charts are {existing_graphs}
-If the user asks to delete or update a chart, you should put plotName as one of the existing charts only, if none match put the plotName as unknown.
 
 JSON template:
-{{
+{
 "plotName": "<has to be filled>",
 "operation": "create/update/delete",
 "plotType": "line/bar/scatter/pie/area/histogram/heatmap",
 "size": "small/medium/large",
 "xAxis": "<GrossQuantity/FlowRate/ShipmentCompartmentID/BaseProductID/BaseProductCode/ShipmentID/ShipmentCode/ExitTime/BayCode/ScheduledDate/CreatedTime>",
 "yAxis":  "<GrossQuantity/FlowRate/ShipmentCompartmentID/BaseProductID/BaseProductCode/ShipmentID/ShipmentCode/ExitTime/BayCode/ScheduledDate/CreatedTime>",
-}}
+}
 
 Chart type keywords:
 
@@ -58,7 +56,7 @@ Chart type keywords:
 Example 1:
 User: "Create a small bar chart showing GrossQuantity against BayCode"
 Output:
-{{
+{
 "plotName": "gross_quantity_chart",
 "operation": "create",
 "plotType": "bar",
@@ -66,24 +64,24 @@ Output:
 "xAxis": "BayCode",
 "yAxis": "GrossQuantity",
 
-}}
+}
 
 Example2:
 User: "Delete flow_rate_chart"
 Output:
-{{
+{
 "plotName": "flow_rate_chart",
 "operation": "delete",
-}}
+}
 
 Example3:
 User: "Make the base product code chart bigger"
 Output:
-{{
+{
 "plotName": "base_product_code_chart",
 "operation": "update",
 "size": "large",
-}}
+}
 Remember: Return ONLY the JSON object, nothing else."""
 
 # System prompt for insights SQL query mapping
@@ -126,13 +124,13 @@ INSIGHTS_SQL_QUERIES = {
     "DAILY_THROUGHPUT_ANALYSIS": """
         -- Daily throughput trends
         SELECT 
-          CAST(STRPTIME(ScheduledDate, '%m/%d/%Y %H:%M:%S') AS DATE) AS operation_date,
-          COUNT(*) AS total_shipments,
-          SUM(GrossQuantity) AS daily_volume,
-          AVG(FlowRate) AS avg_flow_rate,
-          AVG(GrossQuantity) AS avg_shipment_size
+          DATE(ScheduledDate) as operation_date,
+          COUNT(*) as total_shipments,
+          SUM(GrossQuantity) as daily_volume,
+          AVG(FlowRate) as avg_flow_rate,
+          AVG(GrossQuantity) as avg_shipment_size
         FROM shipments 
-        GROUP BY operation_date
+        GROUP BY DATE(ScheduledDate)
         ORDER BY operation_date
     """,
     
@@ -140,10 +138,10 @@ INSIGHTS_SQL_QUERIES = {
         -- Bay performance comparison
         SELECT 
           BayCode,
-          COUNT(*) AS total_operations,
-          AVG(GrossQuantity) AS avg_volume_per_operation,
-          AVG(FlowRate) AS avg_flow_rate,
-          SUM(GrossQuantity) AS total_volume_handled
+          COUNT(*) as total_operations,
+          AVG(GrossQuantity) as avg_volume_per_operation,
+          AVG(FlowRate) as avg_flow_rate,
+          SUM(GrossQuantity) as total_volume_handled
         FROM shipments 
         GROUP BY BayCode
         ORDER BY total_volume_handled DESC
@@ -154,11 +152,11 @@ INSIGHTS_SQL_QUERIES = {
         SELECT 
           BayCode,
           BaseProductCode,
-          AVG(FlowRate) AS avg_flow_rate,
-          MIN(FlowRate) AS min_flow_rate,
-          MAX(FlowRate) AS max_flow_rate,
-          STDDEV_POP(FlowRate) AS flow_rate_variance,
-          COUNT(*) AS operations_count
+          AVG(FlowRate) as avg_flow_rate,
+          MIN(FlowRate) as min_flow_rate,
+          MAX(FlowRate) as max_flow_rate,
+          STDDEV(FlowRate) as flow_rate_variance,
+          COUNT(*) as operations_count
         FROM shipments 
         GROUP BY BayCode, BaseProductCode
         HAVING COUNT(*) >= 5
@@ -167,55 +165,52 @@ INSIGHTS_SQL_QUERIES = {
     "SCHEDULE_ADHERENCE_ANALYSIS": """
         -- Schedule vs actual performance analysis
         SELECT 
-          CAST(STRPTIME(ScheduledDate, '%m/%d/%Y %H:%M:%S') AS DATE) AS scheduled_date,
-          COUNT(*) AS total_shipments,
-          AVG(EXTRACT(epoch FROM (STRPTIME(ExitTime, '%m/%d/%Y %H:%M:%S') - STRPTIME(ScheduledDate, '%m/%d/%Y %H:%M:%S'))) / 3600) AS avg_duration_hours,
-          COUNT(CASE WHEN STRPTIME(ExitTime, '%m/%d/%Y %H:%M:%S') > STRPTIME(ScheduledDate, '%m/%d/%Y %H:%M:%S') + INTERVAL '2 hours' THEN 1 END) AS delayed_operations
+          DATE(ScheduledDate) as scheduled_date,
+          COUNT(*) as total_shipments,
+          AVG(EXTRACT(hour FROM (ExitTime - ScheduledDate))) as avg_duration_hours,
+          COUNT(CASE WHEN ExitTime > ScheduledDate + INTERVAL '2 hours' 
+                THEN 1 END) as delayed_operations
         FROM shipments 
         WHERE ExitTime IS NOT NULL
-        GROUP BY scheduled_date
-        ORDER BY scheduled_date
+        GROUP BY DATE(ScheduledDate)
     """,
     
     "PRODUCT_PORTFOLIO_PERFORMANCE": """
         -- Product performance analysis
         SELECT 
           BaseProductCode,
-          COUNT(*) AS shipment_frequency,
-          SUM(GrossQuantity) AS total_volume,
-          AVG(GrossQuantity) AS avg_shipment_size,
-          AVG(FlowRate) AS avg_processing_rate,
-          100.0 * SUM(GrossQuantity) / SUM(SUM(GrossQuantity)) OVER () AS volume_percentage
+          COUNT(*) as shipment_frequency,
+          SUM(GrossQuantity) as total_volume,
+          AVG(GrossQuantity) as avg_shipment_size,
+          AVG(FlowRate) as avg_processing_rate,
+          SUM(GrossQuantity) * 100.0 / 
+            SUM(SUM(GrossQuantity)) OVER () as volume_percentage
         FROM shipments 
         GROUP BY BaseProductCode
         ORDER BY total_volume DESC
     """,
     
     "OPERATIONAL_TIME_PATTERNS": """
-        -- Hourly, daily, weekly patterns
+        -- Hourly, daily, monthly patterns
         SELECT 
-          EXTRACT(hour FROM STRPTIME(ScheduledDate, '%m/%d/%Y %H:%M:%S')) AS hour_of_day,
-          EXTRACT(dow FROM STRPTIME(ScheduledDate, '%m/%d/%Y %H:%M:%S')) AS day_of_week,
-          COUNT(*) AS operation_count,
-          AVG(GrossQuantity) AS avg_volume,
-          AVG(FlowRate) AS avg_flow_rate
+          EXTRACT(hour FROM ScheduledDate) as hour_of_day,
+          EXTRACT(dow FROM ScheduledDate) as day_of_week,
+          COUNT(*) as operation_count,
+          AVG(GrossQuantity) as avg_volume,
+          AVG(FlowRate) as avg_flow_rate
         FROM shipments 
         GROUP BY hour_of_day, day_of_week
         ORDER BY hour_of_day, day_of_week
     """
 }
 
-
-def call_ollama(prompt, existing_graphs="", model=MODEL_NAME):
+def call_ollama(prompt, model=MODEL_NAME):
     """
     Call Ollama API to generate response
     """
     try:
-        # Create the system prompt with existing_graphs as f-string
-        system_prompt = f"{SYSTEM_PROMPT_TEMPLATE.format(existing_graphs=existing_graphs)}"
-        
         # Print the request being sent for debugging
-        full_prompt = f"{system_prompt}\n\nUser: {prompt}\nOutput:"
+        full_prompt = f"{SYSTEM_PROMPT}\n\nUser: {prompt}\nOutput:"
         print("=" * 80)
         print("OLLAMA REQUEST:")
         print("=" * 80)
@@ -544,6 +539,70 @@ def health_check():
     return jsonify({"status": "healthy", "ollama_url": OLLAMA_URL, "model": MODEL_NAME})
 
 
+# @app.route('/generate-graph-json', methods=['POST'])
+# def generate_graph_json():
+#     """
+#     Main endpoint to generate graph operation JSON from natural language
+#     """
+#     try:
+#         # Get the user query from request
+#         data = request.get_json()
+        
+#         if not data or 'query' not in data:
+#             return jsonify({
+#                 "error": "Missing 'query' field in request body"
+#             }), 400
+        
+#         user_query = data['query']
+#         logger.info(f"Received query: {user_query}")
+        
+#         # Call Ollama to generate JSON
+#         llm_response = call_ollama(user_query)
+        
+#         if not llm_response:
+#             return jsonify({
+#                 "error": "Failed to get response from Ollama. Make sure Ollama is running."
+#             }), 500
+        
+#         # Extract JSON from response
+#         graph_json = extract_json_from_response(llm_response)
+        
+#         if not graph_json:
+#             logger.error(f"Failed to parse JSON from LLM response: {llm_response}")
+#             return jsonify({
+#                 "error": "Failed to parse valid JSON from LLM response",
+#                 "raw_response": llm_response
+#             }), 500
+        
+#         # Add timestamp to plotId if it's a create operation and doesn't have one
+#         if graph_json.get("operation") == "create" and "plotId" in graph_json:
+#             if not re.search(r'\d{10}', graph_json["plotId"]):
+#                 timestamp = int(datetime.now().timestamp())
+#                 plot_type = graph_json.get("plotType", "chart")
+#                 graph_json["plotId"] = f"plot_{plot_type}_{timestamp}"
+        
+#         # Validate the generated JSON
+#         is_valid, validation_message = validate_graph_json(graph_json)
+        
+#         if not is_valid:
+#             return jsonify({
+#                 "error": f"Invalid graph JSON: {validation_message}",
+#                 "generated_json": graph_json
+#             }), 400
+        
+#         logger.info(f"Successfully generated graph JSON: {json.dumps(graph_json)}")
+        
+#         return jsonify({
+#             "success": True,
+#             "query": user_query,
+#             "graphOperation": graph_json
+#         }), 200
+        
+#     except Exception as e:
+#         logger.error(f"Unexpected error: {str(e)}")
+#         return jsonify({
+#             "error": f"Internal server error: {str(e)}"
+#         }), 500
 
 @app.route('/generate-graph-json', methods=['POST'])
 def generate_graph_json():
@@ -567,14 +626,11 @@ def generate_graph_json():
             }), 400
         
         user_query = data['query']
-        existing_graphs = data.get('existingGraphs', '')
         print(f"User query: {user_query}")
-        print(f"Existing graphs: {existing_graphs}")
         logger.info(f"Received query: {user_query}")
-        logger.info(f"Existing graphs: {existing_graphs}")
         
         # Call Ollama to generate JSON
-        llm_response = call_ollama(user_query, existing_graphs)
+        llm_response = call_ollama(user_query)
         
         # Print raw LLM output for debugging
         print("=" * 80)
