@@ -51,7 +51,7 @@ Chart type keywords:
 "line graph", "trend" → "line"
 "bar chart", "column" → "bar"
 "scatter plot", "dots" → "scatter"
-"pie chart", "donut" → "pie"
+"pie chart","pi chart", "donut" → "pie"
 "area chart" → "area"
 "histogram", "distribution" → "histogram"
 "heatmap", "matrix" → "heatmap"
