@@ -3,6 +3,7 @@ import {
     Chart as ChartJS,
     CategoryScale,
     LinearScale,
+    TimeScale,
     PointElement,
     LineElement,
     Title,
@@ -10,10 +11,11 @@ import {
     Legend,
     Filler
 } from 'chart.js';
+import 'chartjs-adapter-date-fns';
 import { Line } from 'react-chartjs-2';
 import { useDarkMode } from '../hooks/useDarkMode';
 
-ChartJS.register(CategoryScale, LinearScale, PointElement, LineElement, Title, Tooltip, Legend, Filler);
+ChartJS.register(CategoryScale, LinearScale, TimeScale, PointElement, LineElement, Title, Tooltip, Legend, Filler);
 
 const LineChart = ({ 
     data, 
@@ -205,6 +207,16 @@ const LineChart = ({
                 }
             },
             x: {
+                type: 'time',
+                time: {
+                    parser: 'M/d/yyyy H:mm:ss', // Parser for format like '1/1/2017 15:20:00'
+                    tooltipFormat: 'MMM d, yyyy, h:mm a',
+                    displayFormats: {
+                        day: 'MMM d',
+                        hour: 'MMM d HH:mm',
+                        minute: 'MMM d HH:mm'
+                    }
+                },
                 grid: { 
                     color: 'rgba(148, 163, 184, 0.15)',
                     drawBorder: false,

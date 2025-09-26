@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { BarChart, LineChart, PieChart, ScatterChart } from '../charts';
+import { BarChart, LineChart, PieChart, ScatterChart, HistogramChart, AreaChart, HeatmapChart } from '../charts';
 import { apiService } from '../services/api';
 import { shipmentFields } from '../sampleData';
 import layoutService from '../services/layoutService';
@@ -15,7 +15,10 @@ import {
   faDollarSign,
   faCog,
   faTrash,
-  faTimes
+  faTimes,
+  faChartArea,
+  faChartColumn,
+  faFire
 } from '@fortawesome/free-solid-svg-icons';
 
 const iconMap = {
@@ -23,6 +26,9 @@ const iconMap = {
   line: faChartLine, 
   pie: faChartPie,
   scatter: faCircle,
+  histogram: faChartColumn,
+  area: faChartArea,
+  heatmap: faFire,
   activity: faBolt,
   kpi: faBullseye,
   users: faUsers,
@@ -34,6 +40,9 @@ const chartComponentMap = {
   line: LineChart,
   pie: PieChart,
   scatter: ScatterChart,
+  histogram: HistogramChart,
+  area: AreaChart,
+  heatmap: HeatmapChart,
   activity: null, // Widget components
   kpi: null,
   users: null,
