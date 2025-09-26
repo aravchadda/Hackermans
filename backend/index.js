@@ -343,7 +343,7 @@ app.get('/api/shipments/columns', async (req, res) => {
 // Chatbot API endpoint - integrates with Flask Ollama API
 app.post('/api/chatbot/query', async (req, res) => {
     try {
-        const { query } = req.body;
+        const { query, existingGraphs } = req.body;
         
         if (!query) {
             return res.status(400).json({
@@ -353,15 +353,17 @@ app.post('/api/chatbot/query', async (req, res) => {
         }
         
         console.log(`🤖 Processing chatbot query: "${query}"`);
+        console.log(`📊 Existing graphs: ${existingGraphs || 'none'}`);
         
         // Call Flask Ollama API
         const flaskApiUrl = 'http://localhost:5000/generate-graph-json';
         
         try {
             const flaskResponse = await axios.post(flaskApiUrl, {
-                query: query
+                query: query,
+                existingGraphs: existingGraphs || ''
             }, {
-                timeout: 100000, // 100 second timeout
+                timeout: 1000000, // 30 second timeout
                 headers: {
                     'Content-Type': 'application/json'
                 }

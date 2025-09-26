@@ -50,7 +50,7 @@ const mockData = {
   revenue: { value: "$84,392", subtitle: "Monthly Revenue" },
 };
 
-const DashboardCanvas = ({ mode, onCreateChart }) => {
+const DashboardCanvas = ({ mode, onCreateChart, onDeleteChart, onUpdateChart }) => {
   const [items, setItems] = useState([]);
   const [dragOver, setDragOver] = useState(false);
   const [editingItem, setEditingItem] = useState(null);
@@ -59,7 +59,7 @@ const DashboardCanvas = ({ mode, onCreateChart }) => {
   const [loading, setLoading] = useState(false);
   const [rangeFilters, setRangeFilters] = useState({});
 
-  // Handle chart creation from chatbot
+  // Handle chart creation and deletion from chatbot
   useEffect(() => {
     if (onCreateChart) {
       const handleChartCreation = (chartConfig) => {
@@ -95,7 +95,37 @@ const DashboardCanvas = ({ mode, onCreateChart }) => {
       // Store the handler for external calls
       window.createChartFromChatbot = handleChartCreation;
     }
-  }, [onCreateChart]);
+
+    if (onDeleteChart) {
+      const handleChartDeletion = async (chartName) => {
+        console.log('DashboardCanvas received delete request for:', chartName);
+        const deleted = await deleteChartByName(chartName);
+        if (deleted) {
+          console.log(`Successfully deleted chart: "${chartName}"`);
+        } else {
+          console.log(`Chart "${chartName}" not found for deletion`);
+        }
+      };
+      
+      // Store the handler for external calls
+      window.deleteChartFromChatbot = handleChartDeletion;
+    }
+
+    if (onUpdateChart) {
+      const handleChartUpdate = async (chartConfig) => {
+        console.log('DashboardCanvas received update request for:', chartConfig);
+        const updated = await updateChartByName(chartConfig);
+        if (updated) {
+          console.log(`Successfully updated chart: "${chartConfig.plotName}"`);
+        } else {
+          console.log(`Chart "${chartConfig.plotName}" not found for update`);
+        }
+      };
+      
+      // Store the handler for external calls
+      window.updateChartFromChatbot = handleChartUpdate;
+    }
+  }, [onCreateChart, onDeleteChart, onUpdateChart]);
 
   // Load saved layout on component mount
   useEffect(() => {
@@ -306,6 +336,116 @@ const DashboardCanvas = ({ mode, onCreateChart }) => {
       } catch (error) {
         console.error('Error clearing layout:', error);
       }
+    }
+  };
+
+  // Delete chart by name (for chatbot integration)
+  const deleteChartByName = async (chartName) => {
+    console.log(`Deleting chart with name: "${chartName}"`);
+    
+    // Find the chart by name (case-insensitive)
+    const chartToDelete = items.find(item => 
+      item.config && item.config.title && 
+      item.config.title.toLowerCase() === chartName.toLowerCase()
+    );
+    
+    if (chartToDelete) {
+      console.log(`Found chart to delete:`, chartToDelete);
+      const updatedItems = items.filter(item => item.id !== chartToDelete.id);
+      setItems(updatedItems);
+      
+      // Save layout after removal
+      if (mode === 'design') {
+        try {
+          await layoutService.saveLayout(updatedItems);
+          console.log(`Successfully deleted chart: "${chartName}"`);
+        } catch (error) {
+          console.error('Error saving layout after chart deletion:', error);
+        }
+      }
+      return true; // Chart found and deleted
+    } else {
+      console.log(`Chart with name "${chartName}" not found`);
+      return false; // Chart not found
+    }
+  };
+
+  // Update chart by name (for chatbot integration)
+  const updateChartByName = async (chartConfig) => {
+    console.log(`Updating chart with name: "${chartConfig.plotName}"`);
+    
+    // Find the chart by name (case-insensitive)
+    const chartToUpdate = items.find(item => 
+      item.config && item.config.title && 
+      item.config.title.toLowerCase() === chartConfig.plotName.toLowerCase()
+    );
+    
+    if (chartToUpdate) {
+      console.log(`Found chart to update:`, chartToUpdate);
+      
+      // Start with existing chart configuration
+      const updatedChart = {
+        ...chartToUpdate,
+        config: {
+          ...chartToUpdate.config
+        }
+      };
+      
+      // Only update fields that are provided in the chartConfig
+      if (chartConfig.plotType) {
+        updatedChart.type = chartConfig.plotType;
+        console.log(`Updating chart type to: ${chartConfig.plotType}`);
+      }
+      
+      if (chartConfig.xAxis) {
+        updatedChart.config.xField = chartConfig.xAxis;
+        console.log(`Updating xField to: ${chartConfig.xAxis}`);
+      }
+      
+      if (chartConfig.yAxis) {
+        updatedChart.config.yField = chartConfig.yAxis;
+        console.log(`Updating yField to: ${chartConfig.yAxis}`);
+      }
+      
+      if (chartConfig.size) {
+        updatedChart.config.height = chartConfig.size === 'small' ? 200 : chartConfig.size === 'large' ? 400 : 300;
+        console.log(`Updating chart size to: ${chartConfig.size} (height: ${updatedChart.config.height})`);
+      }
+      
+      // Update the items array
+      const updatedItems = items.map(item => 
+        item.id === chartToUpdate.id ? updatedChart : item
+      );
+      setItems(updatedItems);
+      
+      // Fetch new data for the updated chart only if xAxis or yAxis changed
+      const needsDataRefresh = chartConfig.xAxis || chartConfig.yAxis;
+      if (needsDataRefresh && updatedChart.config.xField && updatedChart.config.yField) {
+        try {
+          const data = await fetchChartData(updatedChart.config.xField, updatedChart.config.yField, updatedChart.type, {});
+          setChartData(prev => ({
+            ...prev,
+            [chartToUpdate.id]: data
+          }));
+          console.log(`Fetched new data for updated chart:`, data.length, 'records');
+        } catch (error) {
+          console.error('Error fetching data for updated chart:', error);
+        }
+      }
+      
+      // Save layout after update
+      if (mode === 'design') {
+        try {
+          await layoutService.saveLayout(updatedItems);
+          console.log(`Successfully updated chart: "${chartConfig.plotName}"`);
+        } catch (error) {
+          console.error('Error saving layout after chart update:', error);
+        }
+      }
+      return true; // Chart found and updated
+    } else {
+      console.log(`Chart with name "${chartConfig.plotName}" not found`);
+      return false; // Chart not found
     }
   };
 

@@ -5,7 +5,7 @@ const API_BASE_URL = 'http://localhost:4000/api';
 // Create axios instance with default config
 const apiClient = axios.create({
   baseURL: API_BASE_URL,
-  timeout: 120000, // 120 seconds to match backend timeout
+  timeout: 100000, // 100 seconds to match backend timeout
   headers: {
     'Content-Type': 'application/json',
   },
@@ -119,14 +119,35 @@ export const apiService = {
     }
   },
 
+  // Get existing charts from layout
+  async getExistingCharts() {
+    try {
+      const response = await apiClient.get('/layout');
+      if (response.data.success && response.data.layout) {
+        // Extract chart titles from layout items
+        const chartTitles = response.data.layout
+          .filter(item => item.config && item.config.title)
+          .map(item => item.config.title);
+        console.log('📊 Fetched existing charts from layout:', chartTitles);
+        // Return as slash-separated string
+        return chartTitles.join('/');
+      }
+      return '';
+    } catch (error) {
+      console.error('Error fetching existing charts:', error);
+      return '';
+    }
+  },
+
   // Chatbot query endpoint
-  async sendChatbotQuery(query) {
+  async sendChatbotQuery(query, existingGraphs = '') {
     try {
       console.log('Making chatbot API request to:', '/chatbot/query');
-      console.log('Request payload:', { query });
+      console.log('Request payload:', { query, existingGraphs });
       
       const response = await apiClient.post('/chatbot/query', {
-        query: query
+        query: query,
+        existingGraphs: existingGraphs // Send as string directly
       });
       
       console.log('Full API response:', response);

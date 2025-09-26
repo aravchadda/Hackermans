@@ -18,6 +18,26 @@ const CreativeDashboard = ({ mode: initialMode = "view", userRole = "operator" }
     }
   };
 
+  const handleDeleteChart = (chartName) => {
+    // This will be passed to DashboardCanvas to delete the chart
+    console.log('Deleting chart from chatbot:', chartName);
+    
+    // Call the global function to delete the chart
+    if (window.deleteChartFromChatbot) {
+      window.deleteChartFromChatbot(chartName);
+    }
+  };
+
+  const handleUpdateChart = (chartConfig) => {
+    // This will be passed to DashboardCanvas to update the chart
+    console.log('Updating chart from chatbot:', chartConfig);
+    
+    // Call the global function to update the chart
+    if (window.updateChartFromChatbot) {
+      window.updateChartFromChatbot(chartConfig);
+    }
+  };
+
   return (
     <div className="h-screen bg-slate-50 dark:bg-slate-900 flex flex-col overflow-hidden">
       <DashboardHeader 
@@ -29,11 +49,13 @@ const CreativeDashboard = ({ mode: initialMode = "view", userRole = "operator" }
       />
       <div className="flex-1 flex min-h-0">
         <ChartSidebar isVisible={mode === "design"} />
-        <DashboardCanvas mode={mode} onCreateChart={handleCreateChart} />
+        <DashboardCanvas mode={mode} onCreateChart={handleCreateChart} onDeleteChart={handleDeleteChart} onUpdateChart={handleUpdateChart} />
         <ChatBox 
           isVisible={showChat} 
           onClose={() => setShowChat(false)} 
           onCreateChart={handleCreateChart}
+          onDeleteChart={handleDeleteChart}
+          onUpdateChart={handleUpdateChart}
         />
       </div>
     </div>

@@ -36,7 +36,7 @@ export const useChatApi = () => {
           sampleData
         },
         {
-          timeout: 120000, // 120 second timeout to match backend
+          timeout: 100000, // 100 second timeout to match backend
           headers: {
             'Content-Type': 'application/json'
           }

@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { apiService } from '../services/api';
 
-const ChatBox = ({ isVisible, onClose, onCreateChart }) => {
+const ChatBox = ({ isVisible, onClose, onCreateChart, onDeleteChart, onUpdateChart }) => {
   const [messages, setMessages] = useState([
     {
       id: 1,
@@ -32,12 +32,17 @@ const ChatBox = ({ isVisible, onClose, onCreateChart }) => {
     setIsLoading(true);
     try {
       console.log('Sending chatbot query:', inputText);
-      const response = await apiService.sendChatbotQuery(inputText);
+      
+      // Fetch existing charts from layout API
+      const existingCharts = await apiService.getExistingCharts();
+      console.log('Existing graphs being sent:', existingCharts);
+      
+      const response = await apiService.sendChatbotQuery(inputText, existingCharts);
       console.log('Chatbot API response:', response);
       
       if (response) {
-        // Create the chart using the response data
-        if (onCreateChart && response.operation === 'create') {
+        // Handle different operations
+        if (response.operation === 'create' && onCreateChart) {
           const chartConfig = {
             id: `chart_${Date.now()}`,
             type: response.plotType,
@@ -50,11 +55,49 @@ const ChatBox = ({ isVisible, onClose, onCreateChart }) => {
           };
           
           onCreateChart(chartConfig);
+        } else if (response.operation === 'delete' && onDeleteChart) {
+          // Delete the chart by name
+          onDeleteChart(response.plotName);
+        } else if (response.operation === 'update' && onUpdateChart) {
+          // Update the chart with new configuration
+          const chartConfig = {
+            plotName: response.plotName,
+            plotType: response.plotType,
+            xAxis: response.xAxis,
+            yAxis: response.yAxis,
+            size: response.size
+          };
+          
+          onUpdateChart(chartConfig);
+        }
+        
+        // Create appropriate response message based on operation
+        let responseText;
+        if (response.operation === 'create') {
+          responseText = `I've created a ${response.plotType} chart named "${response.plotName}" with ${response.xAxis} on X-axis and ${response.yAxis} on Y-axis. Size: ${response.size}`;
+        } else if (response.operation === 'delete') {
+          responseText = `I've deleted the chart named "${response.plotName}".`;
+        } else if (response.operation === 'update') {
+          // Build update message based on what fields were actually updated
+          const updateParts = [];
+          if (response.plotType) updateParts.push(`chart type to ${response.plotType}`);
+          if (response.xAxis && response.yAxis) updateParts.push(`axes to ${response.xAxis} (X) and ${response.yAxis} (Y)`);
+          else if (response.xAxis) updateParts.push(`X-axis to ${response.xAxis}`);
+          else if (response.yAxis) updateParts.push(`Y-axis to ${response.yAxis}`);
+          if (response.size) updateParts.push(`size to ${response.size}`);
+          
+          if (updateParts.length > 0) {
+            responseText = `I've updated the chart named "${response.plotName}" - changed ${updateParts.join(', ')}.`;
+          } else {
+            responseText = `I've updated the chart named "${response.plotName}".`;
+          }
+        } else {
+          responseText = `I've processed your request for the chart named "${response.plotName}".`;
         }
         
         const aiResponse = {
           id: messages.length + 2,
-          text: `I've created a ${response.plotType} chart named "${response.plotName}" with ${response.xAxis} on X-axis and ${response.yAxis} on Y-axis. Size: ${response.size}`,
+          text: responseText,
           sender: "ai",
           timestamp: new Date().toLocaleTimeString(),
           chartData: response // Store the chart configuration
