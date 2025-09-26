@@ -14,7 +14,8 @@ import {
   faUsers, 
   faDollarSign,
   faCog,
-  faTrash
+  faTrash,
+  faTimes
 } from '@fortawesome/free-solid-svg-icons';
 
 const iconMap = {
@@ -50,7 +51,7 @@ const mockData = {
   revenue: { value: "$84,392", subtitle: "Monthly Revenue" },
 };
 
-const DashboardCanvas = ({ mode, onCreateChart, onDeleteChart, onUpdateChart }) => {
+const DashboardCanvas = ({ mode, showChat, onCreateChart, onDeleteChart, onUpdateChart }) => {
   const [items, setItems] = useState([]);
   const [dragOver, setDragOver] = useState(false);
   const [editingItem, setEditingItem] = useState(null);
@@ -64,6 +65,8 @@ const DashboardCanvas = ({ mode, onCreateChart, onDeleteChart, onUpdateChart }) 
     console.log('DashboardCanvas: Items array updated:', items.length, 'items');
     console.log('DashboardCanvas: Items content:', items);
   }, [items]);
+
+  // Note: Removed click-outside-to-close functionality for modal edit interface
 
   // Function to refresh items from API
   const refreshItemsFromAPI = async () => {
@@ -133,15 +136,20 @@ const DashboardCanvas = ({ mode, onCreateChart, onDeleteChart, onUpdateChart }) 
         });
         
         // Fetch data for the new chart
-        const { xField, yField, type } = chartConfig.config;
-        if (xField && yField) {
-          fetchChartData(xField, yField, type, {})
+        const { xField, yField, yFields, type } = chartConfig.config;
+        if (xField && (yField || yFields)) {
+          const isMultiValue = yFields && yFields.length > 1;
+          const fetchFunction = isMultiValue ? 
+            fetchMultiValueChartData(xField, yFields, type, {}) :
+            fetchChartData(xField, yField, type, {});
+            
+          fetchFunction
             .then(data => {
               setChartData(prev => ({
                 ...prev,
                 [chartConfig.id]: data
               }));
-              console.log(`✅ Fetched data for new chart: ${data.length} records`);
+              console.log(`✅ Fetched data for new chart: ${data.data ? data.data.length : data.length} records`);
             })
             .catch(error => {
               console.error('❌ Error fetching data for new chart:', error);
@@ -204,26 +212,29 @@ const DashboardCanvas = ({ mode, onCreateChart, onDeleteChart, onUpdateChart }) 
           console.log('DashboardCanvas: Items array set from API');
           setLoading(true);
           const fetchPromises = apiItems.map(async (item) => {
-            const { xField, yField, type } = item.config;
+            const { xField, yField, yFields, type } = item.config;
             
             // Check if chart has required fields configured
             const isPieChartReady = type === 'pie' && yField;
-            const isOtherChartReady = type !== 'pie' && xField && yField;
+            const isOtherChartReady = type !== 'pie' && xField && (yField || yFields);
             
             if (isPieChartReady || isOtherChartReady) {
               try {
-                console.log(`Fetching data for ${item.id}: xField=${xField}, yField=${yField}, type=${type}`);
-                const data = await fetchChartData(xField, yField, type, {});
+                console.log(`Fetching data for ${item.id}: xField=${xField}, yField=${yField}, yFields=${yFields}, type=${type}`);
+                const isMultiValue = yFields && yFields.length > 1;
+                const data = isMultiValue ? 
+                  await fetchMultiValueChartData(xField, yFields, type, {}) :
+                  await fetchChartData(xField, yField, type, {});
                 setChartData(prev => ({
                   ...prev,
                   [item.id]: data
                 }));
-                console.log(`✅ Fetched data for ${item.id}:`, data.length, 'records');
+                console.log(`✅ Fetched data for ${item.id}:`, data.data ? data.data.length : data.length, 'records');
               } catch (error) {
                 console.error(`❌ Error fetching data for ${item.id}:`, error);
               }
             } else {
-              console.log(`⏭️ Skipping ${item.id}: missing required fields (xField=${xField}, yField=${yField})`);
+              console.log(`⏭️ Skipping ${item.id}: missing required fields (xField=${xField}, yField=${yField}, yFields=${yFields})`);
             }
           });
           
@@ -244,26 +255,29 @@ const DashboardCanvas = ({ mode, onCreateChart, onDeleteChart, onUpdateChart }) 
             // Fetch data for all charts that have x and y fields configured
             setLoading(true);
             const fetchPromises = savedLayout.map(async (item) => {
-              const { xField, yField, type } = item.config;
+              const { xField, yField, yFields, type } = item.config;
               
               // Check if chart has required fields configured
               const isPieChartReady = type === 'pie' && yField;
-              const isOtherChartReady = type !== 'pie' && xField && yField;
+              const isOtherChartReady = type !== 'pie' && xField && (yField || yFields);
               
               if (isPieChartReady || isOtherChartReady) {
                 try {
-                  console.log(`Fetching data for ${item.id}: xField=${xField}, yField=${yField}, type=${type}`);
-                  const data = await fetchChartData(xField, yField, type, {});
+                  console.log(`Fetching data for ${item.id}: xField=${xField}, yField=${yField}, yFields=${yFields}, type=${type}`);
+                  const isMultiValue = yFields && yFields.length > 1;
+                  const data = isMultiValue ? 
+                    await fetchMultiValueChartData(xField, yFields, type, {}) :
+                    await fetchChartData(xField, yField, type, {});
                   setChartData(prev => ({
                     ...prev,
                     [item.id]: data
                   }));
-                  console.log(`✅ Fetched data for ${item.id}:`, data.length, 'records');
+                  console.log(`✅ Fetched data for ${item.id}:`, data.data ? data.data.length : data.length, 'records');
                 } catch (error) {
                   console.error(`❌ Error fetching data for ${item.id}:`, error);
                 }
               } else {
-                console.log(`⏭️ Skipping ${item.id}: missing required fields (xField=${xField}, yField=${yField})`);
+                console.log(`⏭️ Skipping ${item.id}: missing required fields (xField=${xField}, yField=${yField}, yFields=${yFields})`);
               }
             });
             
@@ -307,7 +321,21 @@ const DashboardCanvas = ({ mode, onCreateChart, onDeleteChart, onUpdateChart }) 
       return data;
     } catch (error) {
       console.error('Error fetching chart data:', error);
-      return [];
+      return { data: [], isMultiValue: false, yAxes: [] };
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Fetch multi-value chart data from backend
+  const fetchMultiValueChartData = async (xAxis, yAxes, chartType, filters = {}) => {
+    try {
+      setLoading(true);
+      const data = await apiService.getMultiValueChartData(xAxis, yAxes, chartType, 1000, filters);
+      return data;
+    } catch (error) {
+      console.error('Error fetching multi-value chart data:', error);
+      return { data: [], isMultiValue: false, yAxes: [] };
     } finally {
       setLoading(false);
     }
@@ -315,6 +343,16 @@ const DashboardCanvas = ({ mode, onCreateChart, onDeleteChart, onUpdateChart }) 
 
   // Get available fields for configuration
   const getAvailableFields = () => {
+    return availableColumns.map(column => ({
+      value: column.name,
+      label: column.name,
+      type: column.type,
+      description: column.description
+    }));
+  };
+
+  const getAvailableYFields = () => {
+    // Allow all fields for Y-axis - no restrictions
     return availableColumns.map(column => ({
       value: column.name,
       label: column.name,
@@ -352,27 +390,39 @@ const DashboardCanvas = ({ mode, onCreateChart, onDeleteChart, onUpdateChart }) 
 
 
 
-  // Simple height calculation - no complex logic
+  // Conservative height calculation to prevent overflow
   const getDynamicHeight = () => {
-    const baseHeight = 200;
-    const minHeight = 150;
+    const isTwoColumnLayout = (mode === 'design' || showChat);
+    const baseHeight = isTwoColumnLayout ? 350 : 280; // Reduced base heights
+    const minHeight = isTwoColumnLayout ? 300 : 250;   // Reduced minimum heights
     
-    // Simple adjustment based on number of items
-    if (items.length <= 2) return Math.max(minHeight, baseHeight + 50);
-    if (items.length <= 4) return baseHeight;
-    if (items.length <= 6) return Math.max(minHeight, baseHeight - 20);
-    return Math.max(minHeight, baseHeight - 40);
+    if (isTwoColumnLayout) {
+      // 2-column layout: moderate charts
+      if (items.length <= 2) return Math.max(minHeight, baseHeight + 50);
+      if (items.length <= 4) return baseHeight;
+      if (items.length <= 6) return Math.max(minHeight, baseHeight - 25);
+      return Math.max(minHeight, baseHeight - 50);
+    } else {
+      // 3-column layout: compact charts
+      if (items.length <= 3) return Math.max(minHeight, baseHeight + 30);
+      if (items.length <= 6) return baseHeight;
+      if (items.length <= 9) return Math.max(minHeight, baseHeight - 15);
+      return Math.max(minHeight, baseHeight - 30);
+    }
   };
 
-  // Grid-based layout with resizable items
+  // Dynamic grid layout based on mode and chatbot state
   const getGridLayout = () => {
+    // Use 2 columns for design mode or when chatbot is open, 3 columns otherwise
+    const columns = (mode === 'design' || showChat) ? 2 : 3;
+    
     return {
       display: 'grid',
-      gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))',
-      gridAutoRows: 'minmax(200px, auto)',
-      gap: '20px',
-      padding: '20px',
-      paddingBottom: '100px',
+      gridTemplateColumns: `repeat(${columns}, 1fr)`, // Dynamic columns based on mode
+      gridAutoRows: 'minmax(300px, auto)', // Reduced minimum height to prevent overflow
+      gap: '16px', // Reduced gap for better space utilization
+      padding: '16px', // Reduced padding for more chart space
+      paddingBottom: '80px', // Reduced bottom padding
       width: '100%',
       minHeight: 'auto',
       alignContent: 'start'
@@ -596,7 +646,7 @@ const DashboardCanvas = ({ mode, onCreateChart, onDeleteChart, onUpdateChart }) 
       }
       
       if (chartConfig.size) {
-        const newHeight = chartConfig.size === 'small' ? 200 : chartConfig.size === 'large' ? 400 : 300;
+        const newHeight = chartConfig.size === 'small' ? 300 : chartConfig.size === 'large' ? 400 : 350;
         updatedChart.config.height = newHeight;
         console.log(`✅ Updating chart size: ${chartToUpdate.config.height} → ${newHeight} (${chartConfig.size})`);
       } else {
@@ -629,15 +679,19 @@ const DashboardCanvas = ({ mode, onCreateChart, onDeleteChart, onUpdateChart }) 
       }
       
       // Fetch new data for the updated chart only if xAxis or yAxis changed
-      const needsDataRefresh = chartConfig.xAxis || chartConfig.yAxis;
-      if (needsDataRefresh && updatedChart.config.xField && updatedChart.config.yField) {
+      const needsDataRefresh = chartConfig.xAxis || chartConfig.yAxis || chartConfig.yAxes;
+      if (needsDataRefresh && updatedChart.config.xField && (updatedChart.config.yField || updatedChart.config.yFields)) {
         try {
-          const data = await fetchChartData(updatedChart.config.xField, updatedChart.config.yField, updatedChart.type, {});
+          const { xField, yField, yFields, type } = updatedChart.config;
+          const isMultiValue = yFields && yFields.length > 1;
+          const data = isMultiValue ? 
+            await fetchMultiValueChartData(xField, yFields, type, {}) :
+            await fetchChartData(xField, yField, type, {});
           setChartData(prev => ({
             ...prev,
             [chartToUpdate.id]: data
           }));
-          console.log(`Fetched new data for updated chart:`, data.length, 'records');
+          console.log(`Fetched new data for updated chart:`, data.data ? data.data.length : data.length, 'records');
         } catch (error) {
           console.error('Error fetching data for updated chart:', error);
         }
@@ -662,7 +716,7 @@ const DashboardCanvas = ({ mode, onCreateChart, onDeleteChart, onUpdateChart }) 
 
   const renderChart = (item) => {
     const ChartComponent = chartComponentMap[item.type];
-    const { xField, yField, title, height } = item.config;
+    const { xField, yField, yFields, title, height } = item.config;
     
         if (!ChartComponent) {
           // Render widget components
@@ -678,7 +732,7 @@ const DashboardCanvas = ({ mode, onCreateChart, onDeleteChart, onUpdateChart }) 
           );
         }
 
-    if (!xField || !yField) {
+    if (!xField || (!yField && !yFields)) {
       return (
         <div className="flex items-center justify-center h-48 bg-slate-50 dark:bg-slate-700 rounded">
           <div className="text-center text-slate-500 dark:text-slate-400">
@@ -690,7 +744,10 @@ const DashboardCanvas = ({ mode, onCreateChart, onDeleteChart, onUpdateChart }) 
     }
 
     // Get data from chartData state
-    const data = chartData[item.id] || [];
+    const chartDataItem = chartData[item.id] || { data: [], isMultiValue: false, yAxes: [] };
+    const data = chartDataItem.data || [];
+    const isMultiValue = chartDataItem.isMultiValue || false;
+    const yAxes = chartDataItem.yAxes || [];
     
     if (loading) {
       return (
@@ -714,14 +771,36 @@ const DashboardCanvas = ({ mode, onCreateChart, onDeleteChart, onUpdateChart }) 
       );
     }
 
+    // Determine if this is a multi-value chart
+    const hasMultipleYFields = isMultiValue || (yFields && yFields.length > 1);
+    const currentYFields = yFields || yAxes;
+
+    // console.log('📊 DashboardCanvas - renderChart for item:', {
+    //   itemId: item.id,
+    //   itemType: item.type,
+    //   xField,
+    //   yField,
+    //   yFields,
+    //   isMultiValue,
+    //   yAxes,
+    //   hasMultipleYFields,
+    //   currentYFields,
+    //   dataLength: data.length,
+    //   firstDataItem: data[0]
+    // });
+
     const chartProps = {
       data: data,
       xField: 'x_value',
-      yField: 'y_value',
+      yField: hasMultipleYFields ? null : 'y_value',
       xFieldLabel: xField,  // Use actual field name for axis label
-      yFieldLabel: yField,  // Use actual field name for axis label
+      yFieldLabel: hasMultipleYFields ? null : yField,  // Use actual field name for axis label
       title: title,
       height: height,
+      // Multi-value support
+      isMultiValue: hasMultipleYFields,
+      yFields: hasMultipleYFields ? currentYFields : null,
+      seriesLabels: hasMultipleYFields ? currentYFields : null,
       ...(item.type === 'pie' && {
         labelField: 'x_value',
         valueField: 'y_value',
@@ -729,6 +808,8 @@ const DashboardCanvas = ({ mode, onCreateChart, onDeleteChart, onUpdateChart }) 
         valueFieldLabel: yField   // Use actual field name for pie chart values
       })
     };
+
+    // console.log('📊 DashboardCanvas - chartProps:', chartProps);
 
     return <ChartComponent {...chartProps} />;
   };
@@ -740,16 +821,18 @@ const DashboardCanvas = ({ mode, onCreateChart, onDeleteChart, onUpdateChart }) 
     return (
       <div
         key={item.id}
-        className={`bg-white dark:bg-slate-800 rounded-lg shadow-sm border border-slate-200 dark:border-slate-700 flex flex-col ${
+        className={`chart-item bg-white dark:bg-slate-800 rounded-lg shadow-sm border border-slate-200 dark:border-slate-700 flex flex-col ${
           mode === "design" ? "cursor-move hover:shadow-lg" : "cursor-pointer hover:shadow-lg"
-        }`}
+        } ${editingItem === item.id ? "ring-2 ring-blue-500 dark:ring-blue-400" : ""}`}
         style={{
           minHeight: getDynamicHeight(),
+          height: '100%',
+          position: 'relative',
         }}
         onClick={() => mode === "view" && setFullscreenItem(item)}
       >
         {/* Chart Header */}
-            <div className="flex items-center justify-between p-3 bg-slate-50 dark:bg-slate-700 border-b  border-slate-200 dark:border-slate-600">
+            <div className="flex items-center justify-between p-1.5 bg-slate-50 dark:bg-slate-700 border-b  border-slate-200 dark:border-slate-600">
               <div className="flex items-center gap-2 ">
                 <FontAwesomeIcon icon={icon} className="text-lg text-slate-600 dark:text-slate-400" />
                 <span className="text-sm font-medium text-slate-700 dark:text-slate-200">{item.config.title || data?.value}</span>
@@ -757,7 +840,19 @@ const DashboardCanvas = ({ mode, onCreateChart, onDeleteChart, onUpdateChart }) 
           {mode === "design" && (
             <div className="flex gap-1">
               <button
-                onClick={() => setEditingItem(editingItem === item.id ? null : item.id)}
+                onClick={(e) => {
+                  e.stopPropagation(); // Prevent event bubbling
+                  const newEditingItem = editingItem === item.id ? null : item.id;
+                  console.log('Edit button clicked:', { 
+                    current: editingItem, 
+                    new: newEditingItem, 
+                    itemId: item.id,
+                    item: item,
+                    items: items.length
+                  });
+                  setEditingItem(newEditingItem);
+                  console.log('setEditingItem called with:', newEditingItem);
+                }}
                 className="p-1 text-slate-500 dark:text-slate-400 hover:text-blue-600 dark:hover:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded"
                 title="Configure"
               >
@@ -775,267 +870,292 @@ const DashboardCanvas = ({ mode, onCreateChart, onDeleteChart, onUpdateChart }) 
         </div>
 
         {/* Chart Content */}
-        <div className="p-4 flex-1">
-          {renderChart(item)}
+        <div className="p-0.5 flex-1 flex flex-col">
+          <div className="flex-1">
+            {renderChart(item)}
+          </div>
         </div>
 
-        {/* Configuration Panel */}
-        {mode === "design" && editingItem === item.id && (
-          <div className="border-t border-slate-200 dark:border-slate-600 p-4    bg-slate-50 dark:bg-slate-700">
-            <h4 className="text-sm font-medium text-slate-700 dark:text-slate-200 mb-3">Chart Configuration</h4>
-            
-            <div className="space-y-3">
-              <div>
-                <label className="block text-xs font-medium text-slate-600 dark:text-slate-400 mb-1">Title</label>
-                <input
-                  type="text"
-                  value={item.config.title}
-                  onChange={(e) => handleItemConfig(item.id, { title: e.target.value })}
-                  className="w-full px-2 py-1 text-sm border border-slate-200 dark:border-slate-600 rounded focus:outline-none focus:ring-1 focus:ring-blue-500 bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100"
-                />
-              </div>
+      </div>
+    );
+  };
 
-                  {item.type === 'pie' ? (
-                    /* Single field selection for pie charts */
-                    <div>
-                      <label className="block text-xs font-medium text-slate-600 dark:text-slate-400 mb-1">Data Field</label>
-                      <select
-                        value={item.config.yField}
-                        onChange={(e) => {
-                          const value = e.target.value;
+  // Get the current item being edited for the modal
+  const getEditingItemData = () => {
+    return items.find(item => item.id === editingItem);
+  };
+
+  const renderEditModal = () => {
+    const item = getEditingItemData();
+    console.log('renderEditModal called:', { editingItem, item });
+    if (!item) {
+      console.log('No item found for editing, returning null');
+      return null;
+    }
+
+    return (
+      <div 
+        className="fixed inset-0 z-50 bg-black bg-opacity-50 flex items-center justify-center p-4 animate-fadeIn"
+        style={{ zIndex: 9999 }}
+      >
+        <div 
+          className="bg-white dark:bg-slate-800 rounded-lg shadow-lg w-full max-w-md animate-slideUp transform transition-all duration-300 ease-out border border-slate-200 dark:border-slate-700"
+          onClick={(e) => e.stopPropagation()}
+        >
+          <div className="flex items-center justify-between p-4 border-b border-slate-200 dark:border-slate-600 bg-slate-50 dark:bg-slate-700">
+            <div className="flex items-center space-x-3">
+              <div className="p-2 bg-primary/10 rounded-md">
+                <FontAwesomeIcon icon={faCog} className="w-4 h-4 text-primary" />
+              </div>
+              <div>
+                <h4 className="text-lg font-semibold text-slate-900 dark:text-slate-100">Chart Configuration</h4>
+                <p className="text-sm text-slate-600 dark:text-slate-400">Customize your chart settings</p>
+              </div>
+            </div>
+            <button
+              onClick={() => {
+                console.log('Close button clicked');
+                setEditingItem(null);
+              }}
+              className="p-2 text-slate-400 dark:text-slate-500 hover:text-slate-600 dark:hover:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-600 rounded-md transition-all duration-200"
+              title="Close Configuration"
+            >
+              <FontAwesomeIcon icon={faTimes} className="w-4 h-4" />
+            </button>
+          </div>
+          
+          <div className="p-4 space-y-4">
+            <div className="space-y-1">
+              <label className="flex text-sm font-medium text-slate-700 dark:text-slate-300 mb-2 items-center">
+                <FontAwesomeIcon icon={faChartBar} className="w-4 h-4 mr-2 text-primary" />
+                Chart Title
+              </label>
+              <input
+                type="text"
+                value={item.config.title || ''}
+                onChange={(e) => {
+                  console.log('Title changed:', e.target.value);
+                  handleItemConfig(item.id, { title: e.target.value });
+                }}
+                className="w-full px-3 py-2 text-sm border border-slate-200 dark:border-slate-600 rounded-md focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 transition-all duration-200"
+                placeholder="Enter a descriptive title for your chart"
+              />
+            </div>
+
+            {item.type === 'pie' ? (
+              <div className="space-y-1">
+                <label className="flex text-sm font-medium text-slate-700 dark:text-slate-300 mb-2 items-center">
+                  <FontAwesomeIcon icon={faChartPie} className="w-4 h-4 mr-2 text-primary" />
+                  Data Field
+                </label>
+                <select
+                  value={item.config.yField || ''}
+                  onChange={(e) => {
+                    const value = e.target.value;
+                    console.log('Pie chart field changed:', value);
+                    handleItemConfig(item.id, {
+                      yField: value,
+                      xField: value // For pie charts, x and y are the same field
+                    });
+                  }}
+                  className="w-full px-3 py-2 text-sm border border-slate-200 dark:border-slate-600 rounded-md focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 transition-all duration-200"
+                >
+                  <option value="">Select data field for pie chart</option>
+                  {getAvailableFields().map(field => (
+                    <option key={field.value} value={field.value}>
+                      {field.label} ({field.type})
+                    </option>
+                  ))}
+                </select>
+                {item.config.yField && (
+                  <div className="p-2 bg-slate-50 dark:bg-slate-700 rounded-md border border-slate-200 dark:border-slate-600">
+                    <p className="text-xs text-slate-600 dark:text-slate-400">
+                      <FontAwesomeIcon icon={faChartPie} className="w-3 h-3 mr-1" />
+                      {getAvailableFields().find(f => f.value === item.config.yField)?.description}
+                    </p>
+                  </div>
+                )}
+              </div>
+            ) : (
+              <>
+                <div className="space-y-1">
+                  <label className="flex text-sm font-medium text-slate-700 dark:text-slate-300 mb-2 items-center">
+                    <FontAwesomeIcon icon={faChartLine} className="w-4 h-4 mr-2 text-primary" />
+                    X-Axis Field
+                  </label>
+                  <select
+                    value={item.config.xField || ''}
+                    onChange={(e) => {
+                      console.log('X-axis field changed:', e.target.value);
+                      handleItemConfig(item.id, { xField: e.target.value });
+                    }}
+                    className="w-full px-3 py-2 text-sm border border-slate-200 dark:border-slate-600 rounded-md focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 transition-all duration-200"
+                  >
+                    <option value="">Select X-axis field</option>
+                    {getAvailableFields().map(field => (
+                      <option key={field.value} value={field.value}>
+                        {field.label} ({field.type})
+                      </option>
+                    ))}
+                  </select>
+                  {item.config.xField && (
+                    <div className="p-2 bg-slate-50 dark:bg-slate-700 rounded-md border border-slate-200 dark:border-slate-600">
+                      <p className="text-xs text-slate-600 dark:text-slate-400">
+                        <FontAwesomeIcon icon={faChartLine} className="w-3 h-3 mr-1" />
+                        {getAvailableFields().find(f => f.value === item.config.xField)?.description}
+                      </p>
+                    </div>
+                  )}
+                </div>
+
+                <div className="space-y-1">
+                  <label className="flex text-sm font-medium text-slate-700 dark:text-slate-300 mb-2 items-center">
+                    <FontAwesomeIcon icon={faChartBar} className="w-4 h-4 mr-2 text-primary" />
+                    Y-Axis Fields
+                  </label>
+                  <p className="text-xs text-slate-500 dark:text-slate-400 mb-2">
+                    💡 Select any field for Y-axis values
+                  </p>
+                  
+                  {/* Multi-select for Y-axis fields */}
+                  <div className="space-y-2">
+                    {/* Quick action buttons */}
+                    <div className="flex space-x-2">
+                      <button
+                        type="button"
+                        onClick={() => {
+                          const allFields = getAvailableYFields().map(f => f.value);
+                          console.log('Select all Y-axis fields');
                           handleItemConfig(item.id, { 
-                            yField: value,
-                            xField: value // For pie charts, x and y are the same field
+                            yFields: allFields,
+                            yField: null
                           });
                         }}
-                        className="w-full px-2 py-1 text-sm border border-slate-200 dark:border-slate-600 rounded focus:outline-none focus:ring-1 focus:ring-blue-500 bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100"
+                        className="px-2 py-1 text-xs bg-slate-100 dark:bg-slate-600 text-slate-700 dark:text-slate-300 rounded hover:bg-slate-200 dark:hover:bg-slate-500 transition-colors"
                       >
-                        <option value="">Select data field</option>
-                        {getAvailableFields().map(field => (
-                          <option key={field.value} value={field.value}>
-                            {field.label} ({field.type})
-                          </option>
-                        ))}
-                      </select>
-                      {item.config.yField && (
-                        <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
-                          {getAvailableFields().find(f => f.value === item.config.yField)?.description}
-                        </p>
-                      )}
-                    </div>
-                  ) : (
-                    /* Two field selection for other chart types */
-                    <>
-                      <div>
-                        <label className="block text-xs font-medium text-slate-600 dark:text-slate-400 mb-1">X-Axis Field</label>
-                        <select
-                          value={item.config.xField}
-                          onChange={(e) => handleItemConfig(item.id, { xField: e.target.value })}
-                          className="w-full px-2 py-1 text-sm border border-slate-200 dark:border-slate-600 rounded focus:outline-none focus:ring-1 focus:ring-blue-500 bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100"
-                        >
-                          <option value="">Select X-axis field</option>
-                          {getAvailableFields().map(field => (
-                            <option key={field.value} value={field.value}>
-                              {field.label} ({field.type})
-                            </option>
-                          ))}
-                        </select>
-                        {item.config.xField && (
-                          <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
-                            {getAvailableFields().find(f => f.value === item.config.xField)?.description}
-                          </p>
-                        )}
-                      </div>
-
-                      <div>
-                        <label className="block text-xs font-medium text-slate-600 dark:text-slate-400 mb-1">Y-Axis Field</label>
-                        <select
-                          value={item.config.yField}
-                          onChange={(e) => handleItemConfig(item.id, { yField: e.target.value })}
-                          className="w-full px-2 py-1 text-sm border border-slate-200 dark:border-slate-600 rounded focus:outline-none focus:ring-1 focus:ring-blue-500 bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100"
-                        >
-                          <option value="">Select Y-axis field</option>
-                          {getAvailableFields().map(field => (
-                            <option key={field.value} value={field.value}>
-                              {field.label} ({field.type})
-                            </option>
-                          ))}
-                        </select>
-                        {item.config.yField && (
-                          <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
-                            {getAvailableFields().find(f => f.value === item.config.yField)?.description}
-                          </p>
-                        )}
-                      </div>
-                    </>
-                  )}
-
-
-              {/* Range Filters */}
-              {((item.type === 'pie' && item.config.yField) || (item.type !== 'pie' && item.config.xField && item.config.yField)) && (
-                <div className="space-y-3 pt-2 border-t border-slate-200 dark:border-slate-600">
-                  <h5 className="text-sm font-medium text-slate-700 dark:text-slate-200">Range Filters</h5>
-                  
-                  {item.type === 'pie' ? (
-                    /* Single field range for pie charts */
-                    <div>
-                      <label className="block text-xs font-medium text-slate-600 dark:text-slate-400 mb-1">
-                        {item.config.yField} Range (Value Filter)
-                      </label>
-                      <div className="flex gap-2 items-center">
-                        <input
-                          type="number"
-                          placeholder="Min"
-                          value={rangeFilters[item.id]?.yMin || ''}
-                          onChange={(e) => {
-                            const value = e.target.value === '' ? undefined : parseFloat(e.target.value);
-                            setRangeFilters(prev => ({
-                              ...prev,
-                              [item.id]: { ...prev[item.id], yMin: value }
-                            }));
-                          }}
-                          className="w-20 px-2 py-1 text-xs border border-slate-200 dark:border-slate-600 rounded focus:outline-none focus:ring-1 focus:ring-blue-500 bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100"
-                        />
-                        <span className="text-xs text-slate-500">to</span>
-                        <input
-                          type="number"
-                          placeholder="Max"
-                          value={rangeFilters[item.id]?.yMax || ''}
-                          onChange={(e) => {
-                            const value = e.target.value === '' ? undefined : parseFloat(e.target.value);
-                            setRangeFilters(prev => ({
-                              ...prev,
-                              [item.id]: { ...prev[item.id], yMax: value }
-                            }));
-                          }}
-                          className="w-20 px-2 py-1 text-xs border border-slate-200 dark:border-slate-600 rounded focus:outline-none focus:ring-1 focus:ring-blue-500 bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100"
-                        />
-                      </div>
-                    </div>
-                  ) : (
-                    /* Two field ranges for other chart types */
-                    <>
-                      {/* X-Axis Range */}
-                      <div>
-                        <label className="block text-xs font-medium text-slate-600 dark:text-slate-400 mb-1">
-                          {item.config.xField} Range
-                        </label>
-                        <div className="flex gap-2 items-center">
-                          <input
-                            type="number"
-                            placeholder="Min"
-                            value={rangeFilters[item.id]?.xMin || ''}
-                        onChange={(e) => {
-                          const value = e.target.value === '' ? undefined : parseFloat(e.target.value);
-                          setRangeFilters(prev => ({
-                            ...prev,
-                            [item.id]: { ...prev[item.id], xMin: value }
-                          }));
+                        Select All
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          console.log('Clear all Y-axis fields');
+                          handleItemConfig(item.id, { 
+                            yFields: [],
+                            yField: null
+                          });
                         }}
-                            className="w-20 px-2 py-1 text-xs border border-slate-200 dark:border-slate-600 rounded focus:outline-none focus:ring-1 focus:ring-blue-500 bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100"
-                          />
-                          <span className="text-xs text-slate-500">to</span>
-                          <input
-                            type="number"
-                            placeholder="Max"
-                            value={rangeFilters[item.id]?.xMax || ''}
-                            onChange={(e) => {
-                              const value = e.target.value === '' ? undefined : parseFloat(e.target.value);
-                              setRangeFilters(prev => ({
-                                ...prev,
-                                [item.id]: { ...prev[item.id], xMax: value }
-                              }));
-                            }}
-                            className="w-20 px-2 py-1 text-xs border border-slate-200 dark:border-slate-600 rounded focus:outline-none focus:ring-1 focus:ring-blue-500 bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100"
-                          />
+                        className="px-2 py-1 text-xs bg-slate-100 dark:bg-slate-600 text-slate-700 dark:text-slate-300 rounded hover:bg-slate-200 dark:hover:bg-slate-500 transition-colors"
+                      >
+                        Clear All
+                      </button>
+                    </div>
+                    
+                <div className="grid grid-cols-2 gap-2 max-h-32 overflow-y-auto border border-slate-200 dark:border-slate-600 rounded-md p-2 bg-slate-50 dark:bg-slate-700">
+                  {getAvailableYFields().map(field => {
+                        const isSelected = item.config.yFields?.includes(field.value) || 
+                                         (item.config.yField === field.value && !item.config.yFields);
+                        return (
+                          <label key={field.value} className="flex items-center space-x-2 text-sm cursor-pointer hover:bg-slate-100 dark:hover:bg-slate-600 p-1 rounded">
+                            <input
+                              type="checkbox"
+                              checked={isSelected}
+                              onChange={(e) => {
+                                const currentYFields = item.config.yFields || (item.config.yField ? [item.config.yField] : []);
+                                let newYFields;
+                                
+                                if (e.target.checked) {
+                                  // Add field to selection
+                                  newYFields = [...currentYFields, field.value];
+                                } else {
+                                  // Remove field from selection
+                                  newYFields = currentYFields.filter(f => f !== field.value);
+                                }
+                                
+                                console.log('Y-axis fields changed:', newYFields);
+                                handleItemConfig(item.id, { 
+                                  yFields: newYFields,
+                                  yField: newYFields.length === 1 ? newYFields[0] : null // Keep single yField for backward compatibility
+                                });
+                              }}
+                              className="rounded border-slate-300 text-primary focus:ring-primary"
+                            />
+                            <span className="text-slate-700 dark:text-slate-300">
+                              {field.label} <span className="text-slate-500 dark:text-slate-400">({field.type})</span>
+                            </span>
+                          </label>
+                        );
+                      })}
+                    </div>
+                    
+                    {/* Selected fields display */}
+                    {(item.config.yFields?.length > 0 || item.config.yField) && (
+                      <div className="p-2 bg-slate-50 dark:bg-slate-700 rounded-md border border-slate-200 dark:border-slate-600">
+                        <p className="text-xs text-slate-600 dark:text-slate-400 mb-1">
+                          <FontAwesomeIcon icon={faChartBar} className="w-3 h-3 mr-1" />
+                          Selected Y-axis fields:
+                        </p>
+                        <div className="flex flex-wrap gap-1">
+                          {(item.config.yFields || (item.config.yField ? [item.config.yField] : [])).map(fieldValue => {
+                            const field = getAvailableYFields().find(f => f.value === fieldValue);
+                            return (
+                              <span key={fieldValue} className="inline-flex items-center px-2 py-1 text-xs bg-primary/10 text-primary rounded-md">
+                                {field?.label}
+                              </span>
+                            );
+                          })}
                         </div>
+                        {(item.config.yFields?.length > 1 || (item.config.yFields?.length > 0 && item.config.yFields?.length > 1)) && (
+                          <p className="text-xs text-slate-500 dark:text-slate-500 mt-1">
+                            💡 Multiple fields will be displayed with different colors
+                          </p>
+                        )}
                       </div>
-
-                      {/* Y-Axis Range */}
-                      <div>
-                        <label className="block text-xs font-medium text-slate-600 dark:text-slate-400 mb-1">
-                          {item.config.yField} Range
-                        </label>
-                        <div className="flex gap-2 items-center">
-                          <input
-                            type="number"
-                            placeholder="Min"
-                            value={rangeFilters[item.id]?.yMin || ''}
-                            onChange={(e) => {
-                              const value = e.target.value === '' ? undefined : parseFloat(e.target.value);
-                              setRangeFilters(prev => ({
-                                ...prev,
-                                [item.id]: { ...prev[item.id], yMin: value }
-                              }));
-                            }}
-                            className="w-20 px-2 py-1 text-xs border border-slate-200 dark:border-slate-600 rounded focus:outline-none focus:ring-1 focus:ring-blue-500 bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100"
-                          />
-                          <span className="text-xs text-slate-500">to</span>
-                          <input
-                            type="number"
-                            placeholder="Max"
-                            value={rangeFilters[item.id]?.yMax || ''}
-                            onChange={(e) => {
-                              const value = e.target.value === '' ? undefined : parseFloat(e.target.value);
-                              setRangeFilters(prev => ({
-                                ...prev,
-                                [item.id]: { ...prev[item.id], yMax: value }
-                              }));
-                            }}
-                            className="w-20 px-2 py-1 text-xs border border-slate-200 dark:border-slate-600 rounded focus:outline-none focus:ring-1 focus:ring-blue-500 bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100"
-                          />
-                        </div>
-                      </div>
-                    </>
-                  )}
-                </div>
-              )}
-
-              {/* Fetch Data Button */}
-              {((item.type === 'pie' && item.config.yField) || (item.type !== 'pie' && item.config.xField && item.config.yField)) && (
-                <div className="pt-2">
-                  <button
-                    onClick={async () => {
-                      try {
-                        setLoading(true);
-                        const filters = rangeFilters[item.id] || {};
-                        const data = await fetchChartData(item.config.xField, item.config.yField, item.type, filters);
-                        setChartData(prev => ({
-                          ...prev,
-                          [item.id]: data
-                        }));
-                        console.log(`✅ Manually fetched data for ${item.id}:`, data.length, 'records');
-                      } catch (error) {
-                        console.error(`❌ Error manually fetching data for ${item.id}:`, error);
-                      } finally {
-                        setLoading(false);
-                      }
-                    }}
-                    disabled={loading}
-                    className="w-full px-3 py-2 bg-blue-600 hover:bg-blue-700 disabled:bg-blue-400 text-white text-sm font-medium rounded-md transition-colors flex items-center justify-center gap-2"
-                  >
-                    {loading ? (
-                      <>
-                        <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
-                        Fetching...
-                      </>
-                    ) : (
-                      <>
-                        📊 Fetch Data
-                      </>
                     )}
-                  </button>
+                  </div>
                 </div>
-              )}
+              </>
+            )}
+
+
+            <div className="flex justify-end pt-4 border-t border-slate-200 dark:border-slate-600">
+              <button
+                onClick={async () => {
+                  console.log('Save Changes button clicked');
+                  
+                  // Fetch new chart data if fields are configured
+                  const { xField, yField, yFields, type } = item.config;
+                  const isPieChartReady = type === 'pie' && yField;
+                  const isOtherChartReady = type !== 'pie' && xField && (yField || yFields);
+                  
+                  if (isPieChartReady || isOtherChartReady) {
+                    try {
+                      console.log(`Fetching updated data for ${item.id}: xField=${xField}, yField=${yField}, yFields=${yFields}, type=${type}`);
+                      const isMultiValue = yFields && yFields.length > 1;
+                      const data = isMultiValue ? 
+                        await apiService.getMultiValueChartData(xField, yFields, type, 1000, {}) :
+                        await apiService.getChartData(xField, yField, type, 1000, {});
+                      setChartData(prev => ({
+                        ...prev,
+                        [item.id]: data
+                      }));
+                      console.log(`✅ Updated chart data: ${data.data ? data.data.length : data.length} records`);
+                    } catch (error) {
+                      console.error('❌ Error fetching updated chart data:', error);
+                    }
+                  }
+                  
+                  setEditingItem(null);
+                }}
+                className="px-4 py-2 bg-primary hover:bg-primary/90 text-primary-foreground rounded-md transition-all duration-200 hover:shadow-md font-medium flex items-center space-x-2"
+              >
+                <FontAwesomeIcon icon={faBolt} className="w-4 h-4" />
+                <span>Save Changes</span>
+              </button>
             </div>
           </div>
-        )}
-
-        
+        </div>
       </div>
-     
     );
-    
   };
 
   return (
@@ -1137,6 +1257,14 @@ const DashboardCanvas = ({ mode, onCreateChart, onDeleteChart, onUpdateChart }) 
             </div>
           </div>
         </div>
+      )}
+
+      {/* Edit Modal */}
+      {editingItem && (
+        <>
+          {console.log('Rendering edit modal for:', editingItem)}
+          {renderEditModal()}
+        </>
       )}
     </main>
   );

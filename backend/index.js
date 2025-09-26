@@ -222,12 +222,12 @@ app.get('/api/shipments/by-bay', async (req, res) => {
 // Dynamic chart data endpoint
 app.get('/api/shipments/chart-data', async (req, res) => {
     try {
-        const { xAxis, yAxis, limit = 1000, xMin, xMax, yMin, yMax } = req.query;
+        const { xAxis, yAxis, yAxes, limit = 1000, xMin, xMax, yMin, yMax } = req.query;
         
-        if (!xAxis || !yAxis) {
+        if (!xAxis || (!yAxis && !yAxes)) {
             return res.status(400).json({
                 success: false,
-                error: 'Both xAxis and yAxis parameters are required'
+                error: 'Both xAxis and yAxis (or yAxes) parameters are required'
             });
         }
         
@@ -238,15 +238,44 @@ app.get('/api/shipments/chart-data', async (req, res) => {
             'BayCode', 'ScheduledDate', 'CreatedTime'
         ];
         
-        if (!allowedColumns.includes(xAxis) || !allowedColumns.includes(yAxis)) {
+        // Allow all fields for Y-axis values - no restrictions
+        const allowedYAxisColumns = allowedColumns;
+        
+        // Determine which y-axis fields to use
+        let yAxisFields = [];
+        if (yAxes) {
+            // Multiple y-axis fields provided as comma-separated string
+            yAxisFields = yAxes.split(',').map(field => field.trim());
+        } else if (yAxis) {
+            // Single y-axis field
+            yAxisFields = [yAxis];
+        }
+        
+        // Validate x-axis field
+        if (!allowedColumns.includes(xAxis)) {
             return res.status(400).json({
                 success: false,
-                error: 'Invalid column names. Allowed columns: ' + allowedColumns.join(', ')
+                error: 'Invalid xAxis column name. Allowed columns: ' + allowedColumns.join(', ')
             });
         }
         
+        // Validate all y-axis fields
+        for (const field of yAxisFields) {
+            if (!allowedYAxisColumns.includes(field)) {
+                return res.status(400).json({
+                    success: false,
+                    error: `Invalid yAxis column name: ${field}. Allowed columns: ` + allowedYAxisColumns.join(', ')
+                });
+            }
+        }
+        
         // Build WHERE conditions for range filters
-        let whereConditions = [`${xAxis} IS NOT NULL`, `${yAxis} IS NOT NULL`];
+        let whereConditions = [`${xAxis} IS NOT NULL`];
+        
+        // Add null checks for all y-axis fields
+        yAxisFields.forEach(field => {
+            whereConditions.push(`${field} IS NOT NULL`);
+        });
         
         // Apply range filters to the actual selected columns
         if (xMin !== undefined && xMin !== '') {
@@ -256,23 +285,31 @@ app.get('/api/shipments/chart-data', async (req, res) => {
             whereConditions.push(`${xAxis} <= ${parseFloat(xMax)}`);
         }
         if (yMin !== undefined && yMin !== '') {
-            whereConditions.push(`${yAxis} >= ${parseFloat(yMin)}`);
+            yAxisFields.forEach(field => {
+                whereConditions.push(`${field} >= ${parseFloat(yMin)}`);
+            });
         }
         if (yMax !== undefined && yMax !== '') {
-            whereConditions.push(`${yAxis} <= ${parseFloat(yMax)}`);
+            yAxisFields.forEach(field => {
+                whereConditions.push(`${field} <= ${parseFloat(yMax)}`);
+            });
         }
         
         const whereClause = whereConditions.join(' AND ');
         
-        // Always return simple x-y pairs without aggregation
+        // Build SELECT clause with x-axis and all y-axis fields
+        const selectFields = [xAxis + ' as x_value'];
+        yAxisFields.forEach((field, index) => {
+            selectFields.push(`${field} as y_value_${index}`);
+        });
+        
         const query = `
             SELECT 
-                ${xAxis} as x_value,
-                ${yAxis} as y_value
+                ${selectFields.join(', ')}
             FROM shipments 
             WHERE ${whereClause}
             ORDER BY CreatedTime DESC
-            LIMIT ${parseInt(1000)}
+            LIMIT ${parseInt(limit)}
         `;
         
         const data = await runQuery(query);
@@ -282,7 +319,9 @@ app.get('/api/shipments/chart-data', async (req, res) => {
             data,
             count: data.length,
             xAxis,
-            yAxis
+            yAxis: yAxisFields.length === 1 ? yAxisFields[0] : null,
+            yAxes: yAxisFields,
+            isMultiValue: yAxisFields.length > 1
         });
     } catch (error) {
         console.error('Error fetching chart data:', error);

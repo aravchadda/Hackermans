@@ -50,7 +50,7 @@ const ChatBox = ({ isVisible, onClose, onCreateChart, onDeleteChart, onUpdateCha
               xField: response.xAxis,
               yField: response.yAxis,
               title: response.plotName,
-              height: response.size === 'small' ? 200 : response.size === 'large' ? 400 : 300
+              height: response.size === 'small' ? 300 : response.size === 'large' ? 400 : 350
             }
           };
           
