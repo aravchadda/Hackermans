@@ -60,6 +60,20 @@ const initializeTables = async () => {
       layout JSON,
       created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
       user_id VARCHAR
+    )`,
+    
+    `CREATE TABLE IF NOT EXISTS shipments (
+      GrossQuantity DECIMAL,
+      FlowRate DECIMAL,
+      ShipmentCompartmentID VARCHAR,
+      BaseProductID VARCHAR,
+      BaseProductCode VARCHAR,
+      ShipmentID VARCHAR,
+      ShipmentCode VARCHAR,
+      ExitTime VARCHAR,
+      BayCode VARCHAR,
+      ScheduledDate VARCHAR,
+      CreatedTime VARCHAR
     )`
   ];
   
@@ -93,7 +107,36 @@ const initializeTables = async () => {
     console.log('✅ Sample data inserted');
   }
   
+  // Load shipment data from CSV
+  await loadShipmentData();
+  
   console.log('✅ Database tables initialized');
+};
+
+const loadShipmentData = async () => {
+  try {
+    const database = getDatabase();
+    
+    // Check if shipment data already exists
+    const shipmentCount = await runQueryCount('SELECT COUNT(*) as count FROM shipments');
+    
+    if (shipmentCount === 0) {
+      console.log('📦 Loading shipment data from CSV...');
+      
+      // Use DuckDB's CSV reading capability
+      await runQuery(`
+        INSERT INTO shipments 
+        SELECT * FROM read_csv_auto('./Shipment 1.xlsx - Sheet1.csv', header=true)
+      `);
+      
+      const finalCount = await runQueryCount('SELECT COUNT(*) as count FROM shipments');
+      console.log(`✅ Loaded ${finalCount} shipment records`);
+    } else {
+      console.log(`✅ Shipment data already loaded (${shipmentCount} records)`);
+    }
+  } catch (error) {
+    console.error('❌ Error loading shipment data:', error);
+  }
 };
 
 const getDatabase = () => {

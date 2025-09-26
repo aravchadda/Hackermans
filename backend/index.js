@@ -3,11 +3,22 @@ const cors = require('cors');
 const { connectDatabase, runQuery, runQueryFirst, runQueryCount } = require('./database');
 
 const app = express();
-app.use(cors());
+
+// Configure CORS with specific options
+app.use(cors({
+    origin: ['http://localhost:3000', 'http://127.0.0.1:3000'],
+    credentials: true,
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With']
+}));
+
 require('dotenv').config();
 
 const PORT = process.env.PORT || 5000;
 app.use(express.json());
+
+// Handle preflight requests
+app.options('*', cors());
 
 // DuckDB API Routes
 app.get('/api/data', async (req, res) => {
@@ -124,6 +135,240 @@ app.post('/api/data/query', async (req, res) => {
     }
 });
 
+// Shipment data routes
+app.get('/api/shipments', async (req, res) => {
+    try {
+        const { limit = 100, offset = 0 } = req.query;
+        const data = await runQuery(`
+            SELECT * FROM shipments 
+            ORDER BY CreatedTime DESC 
+            LIMIT ${parseInt(limit)} OFFSET ${parseInt(offset)}
+        `);
+        res.json({ success: true, data, count: data.length });
+    } catch (error) {
+        console.error('Error fetching shipments:', error);
+        res.status(500).json({ success: false, error: error.message });
+    }
+});
+
+app.get('/api/shipments/count', async (req, res) => {
+    try {
+        const count = await runQueryCount('SELECT COUNT(*) as count FROM shipments');
+        res.json({ success: true, count });
+    } catch (error) {
+        console.error('Error fetching shipments count:', error);
+        res.status(500).json({ success: false, error: error.message });
+    }
+});
+
+app.get('/api/shipments/stats', async (req, res) => {
+    try {
+        const stats = await runQuery(`
+            SELECT 
+                COUNT(*) as total_shipments,
+                SUM(GrossQuantity) as total_quantity,
+                AVG(FlowRate) as avg_flow_rate,
+                COUNT(DISTINCT BaseProductCode) as unique_products,
+                COUNT(DISTINCT BayCode) as unique_bays
+            FROM shipments
+        `);
+        res.json({ success: true, stats: stats[0] });
+    } catch (error) {
+        console.error('Error fetching shipment stats:', error);
+        res.status(500).json({ success: false, error: error.message });
+    }
+});
+
+app.get('/api/shipments/by-product', async (req, res) => {
+    try {
+        const data = await runQuery(`
+            SELECT 
+                BaseProductCode,
+                COUNT(*) as shipment_count,
+                SUM(GrossQuantity) as total_quantity,
+                AVG(FlowRate) as avg_flow_rate
+            FROM shipments 
+            GROUP BY BaseProductCode 
+            ORDER BY shipment_count DESC
+            LIMIT 20
+        `);
+        res.json({ success: true, data });
+    } catch (error) {
+        console.error('Error fetching shipments by product:', error);
+        res.status(500).json({ success: false, error: error.message });
+    }
+});
+
+app.get('/api/shipments/by-bay', async (req, res) => {
+    try {
+        const data = await runQuery(`
+            SELECT 
+                BayCode,
+                COUNT(*) as shipment_count,
+                SUM(GrossQuantity) as total_quantity,
+                AVG(FlowRate) as avg_flow_rate
+            FROM shipments 
+            GROUP BY BayCode 
+            ORDER BY shipment_count DESC
+        `);
+        res.json({ success: true, data });
+    } catch (error) {
+        console.error('Error fetching shipments by bay:', error);
+        res.status(500).json({ success: false, error: error.message });
+    }
+});
+
+// Dynamic chart data endpoint
+app.get('/api/shipments/chart-data', async (req, res) => {
+    try {
+        const { xAxis, yAxis, limit = 1000, xMin, xMax, yMin, yMax } = req.query;
+        
+        if (!xAxis || !yAxis) {
+            return res.status(400).json({
+                success: false,
+                error: 'Both xAxis and yAxis parameters are required'
+            });
+        }
+        
+        // Validate column names to prevent SQL injection (exact match with CSV headers)
+        const allowedColumns = [
+            'GrossQuantity', 'FlowRate', 'ShipmentCompartmentID', 'BaseProductID', 
+            'BaseProductCode', 'ShipmentID', 'ShipmentCode', 'ExitTime', 
+            'BayCode', 'ScheduledDate', 'CreatedTime'
+        ];
+        
+        if (!allowedColumns.includes(xAxis) || !allowedColumns.includes(yAxis)) {
+            return res.status(400).json({
+                success: false,
+                error: 'Invalid column names. Allowed columns: ' + allowedColumns.join(', ')
+            });
+        }
+        
+        // Build WHERE conditions for range filters
+        let whereConditions = [`${xAxis} IS NOT NULL`, `${yAxis} IS NOT NULL`];
+        
+        console.log('Range filter parameters:', { xMin, xMax, yMin, yMax });
+        
+        // Apply range filters to the actual selected columns
+        if (xMin !== undefined && xMin !== '') {
+            whereConditions.push(`${xAxis} >= ${parseFloat(xMin)}`);
+            console.log(`Applied xMin filter: ${xAxis} >= ${parseFloat(xMin)}`);
+        }
+        if (xMax !== undefined && xMax !== '') {
+            whereConditions.push(`${xAxis} <= ${parseFloat(xMax)}`);
+            console.log(`Applied xMax filter: ${xAxis} <= ${parseFloat(xMax)}`);
+        }
+        if (yMin !== undefined && yMin !== '') {
+            whereConditions.push(`${yAxis} >= ${parseFloat(yMin)}`);
+            console.log(`Applied yMin filter: ${yAxis} >= ${parseFloat(yMin)}`);
+        }
+        if (yMax !== undefined && yMax !== '') {
+            whereConditions.push(`${yAxis} <= ${parseFloat(yMax)}`);
+            console.log(`Applied yMax filter: ${yAxis} <= ${parseFloat(yMax)}`);
+        }
+        
+        const whereClause = whereConditions.join(' AND ');
+        console.log('Final WHERE clause:', whereClause);
+        
+        // Always return simple x-y pairs without aggregation
+        const query = `
+            SELECT 
+                ${xAxis} as x_value,
+                ${yAxis} as y_value
+            FROM shipments 
+            WHERE ${whereClause}
+            ORDER BY CreatedTime DESC
+            LIMIT ${parseInt(1000)}
+        `;
+        
+        const data = await runQuery(query);
+        
+        res.json({
+            success: true,
+            data,
+            count: data.length,
+            xAxis,
+            yAxis,
+            groupBy: groupBy === 'true'
+        });
+    } catch (error) {
+        console.error('Error fetching chart data:', error);
+        res.status(500).json({ success: false, error: error.message });
+    }
+});
+
+// Get available columns for chart axes
+app.get('/api/shipments/columns', async (req, res) => {
+    try {
+        const columns = [
+            { name: 'GrossQuantity', type: 'numeric', description: 'Gross quantity of items shipped' },
+            { name: 'FlowRate', type: 'numeric', description: 'Flow rate measurement for shipment processing' },
+            { name: 'ShipmentCompartmentID', type: 'categorical', description: 'Unique identifier for shipment compartment' },
+            { name: 'BaseProductID', type: 'categorical', description: 'Unique identifier for base product' },
+            { name: 'BaseProductCode', type: 'categorical', description: 'Product code identifier' },
+            { name: 'ShipmentID', type: 'categorical', description: 'Unique identifier for shipment' },
+            { name: 'ShipmentCode', type: 'categorical', description: 'Shipment code identifier' },
+            { name: 'ExitTime', type: 'datetime', description: 'Timestamp when shipment exited the system' },
+            { name: 'BayCode', type: 'categorical', description: 'Bay identifier where shipment was processed' },
+            { name: 'ScheduledDate', type: 'datetime', description: 'Scheduled date for shipment processing' },
+            { name: 'CreatedTime', type: 'datetime', description: 'Timestamp when shipment record was created' }
+        ];
+        
+        res.json({ success: true, columns });
+    } catch (error) {
+        console.error('Error fetching columns:', error);
+        res.status(500).json({ success: false, error: error.message });
+    }
+});
+
+// Get aggregated data for specific columns
+app.get('/api/shipments/aggregated', async (req, res) => {
+    try {
+        const { xAxis, yAxis, aggregation = 'COUNT' } = req.query;
+        
+        if (!xAxis || !yAxis) {
+            return res.status(400).json({
+                success: false,
+                error: 'Both xAxis and yAxis parameters are required'
+            });
+        }
+        
+        // Validate aggregation type
+        const allowedAggregations = ['COUNT', 'SUM', 'AVG', 'MIN', 'MAX'];
+        if (!allowedAggregations.includes(aggregation.toUpperCase())) {
+            return res.status(400).json({
+                success: false,
+                error: 'Invalid aggregation. Allowed: ' + allowedAggregations.join(', ')
+            });
+        }
+        
+        const query = `
+            SELECT 
+                ${xAxis} as x_value,
+                ${aggregation.toUpperCase()}(${yAxis}) as y_value
+            FROM shipments 
+            WHERE ${xAxis} IS NOT NULL AND ${yAxis} IS NOT NULL
+            GROUP BY ${xAxis}
+            ORDER BY y_value DESC
+            LIMIT 100
+        `;
+        
+        const data = await runQuery(query);
+        
+        res.json({
+            success: true,
+            data,
+            count: data.length,
+            xAxis,
+            yAxis,
+            aggregation: aggregation.toUpperCase()
+        });
+    } catch (error) {
+        console.error('Error fetching aggregated data:', error);
+        res.status(500).json({ success: false, error: error.message });
+    }
+});
+
 // Initialize database and start server
 const startServer = async () => {
     try {
@@ -137,6 +382,13 @@ const startServer = async () => {
             console.log(`📈 Stats API: http://localhost:${PORT}/api/data/stats`);
             console.log(`🔍 Categories API: http://localhost:${PORT}/api/data/categories`);
             console.log(`💾 Query API: http://localhost:${PORT}/api/data/query`);
+            console.log(`📦 Shipments API: http://localhost:${PORT}/api/shipments`);
+            console.log(`📊 Shipment Stats: http://localhost:${PORT}/api/shipments/stats`);
+            console.log(`🏭 By Product: http://localhost:${PORT}/api/shipments/by-product`);
+            console.log(`🏗️ By Bay: http://localhost:${PORT}/api/shipments/by-bay`);
+            console.log(`📈 Chart Data: http://localhost:${PORT}/api/shipments/chart-data?xAxis=BayCode&yAxis=GrossQuantity`);
+            console.log(`📋 Available Columns: http://localhost:${PORT}/api/shipments/columns`);
+            console.log(`📊 Aggregated Data: http://localhost:${PORT}/api/shipments/aggregated?xAxis=BaseProductCode&yAxis=GrossQuantity&aggregation=SUM`);
         });
     } catch (error) {
         console.error('❌ Failed to start server:', error);
