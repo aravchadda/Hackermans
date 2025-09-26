@@ -1,5 +1,6 @@
 const express = require('express');
 const cors = require('cors');
+const axios = require('axios');
 const { connectDatabase, runQuery, runQueryFirst, runQueryCount } = require('./database');
 
 const app = express();
@@ -289,6 +290,32 @@ app.get('/api/shipments/chart-data', async (req, res) => {
     }
 });
 
+// Health check endpoint
+app.get('/health', async (req, res) => {
+    try {
+        // Check Flask API health
+        let flaskHealth = { status: 'unknown', error: null };
+        try {
+            const flaskResponse = await axios.get('http://localhost:5000/health', { timeout: 5000 });
+            flaskHealth = { status: 'healthy', data: flaskResponse.data };
+        } catch (flaskError) {
+            flaskHealth = { status: 'unhealthy', error: flaskError.message };
+        }
+        
+        res.json({
+            success: true,
+            nodejs: { status: 'healthy', port: PORT },
+            flask: flaskHealth,
+            timestamp: new Date().toISOString()
+        });
+    } catch (error) {
+        res.status(500).json({
+            success: false,
+            error: error.message
+        });
+    }
+});
+
 // Get available columns for chart axes
 app.get('/api/shipments/columns', async (req, res) => {
     try {
@@ -313,7 +340,7 @@ app.get('/api/shipments/columns', async (req, res) => {
     }
 });
 
-// Chatbot API endpoint
+// Chatbot API endpoint - integrates with Flask Ollama API
 app.post('/api/chatbot/query', async (req, res) => {
     try {
         const { query } = req.body;
@@ -325,21 +352,62 @@ app.post('/api/chatbot/query', async (req, res) => {
             });
         }
         
-        // Dummy response for now
-        const dummyResponse = {
-            plotName: "Sales Analysis",
-            operation: "create",
-            plotType: "bar",
-            size: "medium",
-            xAxis: "BayCode",
-            yAxis: "GrossQuantity"
-        };
+        console.log(`🤖 Processing chatbot query: "${query}"`);
         
-        res.json({
-            success: true,
-            data: dummyResponse,
-            query: query
-        });
+        // Call Flask Ollama API
+        const flaskApiUrl = 'http://localhost:5000/generate-graph-json';
+        
+        try {
+            const flaskResponse = await axios.post(flaskApiUrl, {
+                query: query
+            }, {
+                timeout: 100000, // 100 second timeout
+                headers: {
+                    'Content-Type': 'application/json'
+                }
+            });
+            
+            if (flaskResponse.data.success) {
+                const graphOperation = flaskResponse.data.graphOperation;
+                console.log('✅ Flask API response:', graphOperation);
+                
+                res.json({
+                    success: true,
+                    data: graphOperation,
+                    query: query,
+                    source: 'flask-ollama'
+                });
+            } else {
+                console.error('❌ Flask API returned error:', flaskResponse.data.error);
+                res.status(500).json({
+                    success: false,
+                    error: `Flask API error: ${flaskResponse.data.error}`,
+                    query: query
+                });
+            }
+        } catch (flaskError) {
+            console.error('❌ Flask API call failed:', flaskError.message);
+            
+            // Fallback to dummy response if Flask API is unavailable
+            console.log('🔄 Falling back to dummy response');
+            const fallbackResponse = {
+                plotName: "fallback_chart",
+                operation: "create",
+                plotType: "bar",
+                size: "medium",
+                xAxis: "BayCode",
+                yAxis: "GrossQuantity"
+            };
+            
+            res.json({
+                success: true,
+                data: fallbackResponse,
+                query: query,
+                source: 'fallback',
+                warning: 'Flask API unavailable, using fallback response'
+            });
+        }
+        
     } catch (error) {
         console.error('Error processing chatbot query:', error);
         res.status(500).json({
@@ -479,6 +547,8 @@ const startServer = async () => {
         
         app.listen(PORT, () => {
             console.log(`🚀 Server running on port ${PORT}`);
+            console.log(`🏥 Health Check: http://localhost:${PORT}/health`);
+            console.log(`🤖 Chatbot API: http://localhost:${PORT}/api/chatbot/query`);
             console.log(`📊 DuckDB API: http://localhost:${PORT}/api/data`);
             console.log(`📈 Stats API: http://localhost:${PORT}/api/data/stats`);
             console.log(`🔍 Categories API: http://localhost:${PORT}/api/data/categories`);
