@@ -3,6 +3,7 @@ import DashboardHeader from './components/DashboardHeader';
 import ChartSidebar from './components/ChartSidebar';
 import DashboardCanvas from './components/DashboardCanvas';
 import ChatBox from './components/ChatBox';
+import AnalyticsDashboard from './AnalyticsDashboard';
 
 const CreativeDashboard = ({ mode: initialMode = "view", userRole = "operator" }) => {
   const [mode, setMode] = useState(initialMode);
@@ -40,6 +41,24 @@ const CreativeDashboard = ({ mode: initialMode = "view", userRole = "operator" }
       console.error('CreativeDashboard: window.updateChartFromChatbot not found!');
     }
   };
+
+  // Handle analytics mode with special styling
+  if (mode === "analytics") {
+    return (
+      <div className="h-screen bg-slate-50 dark:bg-slate-900 flex flex-col overflow-hidden">
+        <DashboardHeader 
+          mode={mode} 
+          onModeChange={setMode} 
+          showChat={showChat}
+          onToggleChat={() => setShowChat(!showChat)}
+          userRole={userRole}
+        />
+        <div className="flex-1 flex min-h-0">
+          <AnalyticsDashboard />
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="h-screen bg-slate-50 dark:bg-slate-900 flex flex-col overflow-hidden">
