@@ -1,6 +1,9 @@
 import React from 'react';
+import { useTheme } from '../ThemeContext';
 
 const DashboardHeader = ({ mode, onModeChange, showChat, onToggleChat }) => {
+
+  const { toggleTheme, isDark } = useTheme();
   return (
     <header className="h-16 bg-dashboard-surface border-b border-dashboard-border flex items-center justify-between px-6 shadow-sm">
       <div className="flex items-center gap-4">
@@ -59,6 +62,13 @@ const DashboardHeader = ({ mode, onModeChange, showChat, onToggleChat }) => {
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
           </svg>
           Settings
+        </button>
+        <button
+          onClick={toggleTheme}
+          className="px-4 py-2 rounded-lg text-sm font-medium bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-slate-600 hover:bg-slate-200 dark:hover:bg-slate-600 transition-all"
+          title={`Switch to ${isDark ? 'light' : 'dark'} mode`}
+        >
+          {isDark ? '☀️' : '🌙'}
         </button>
       </div>
     </header>

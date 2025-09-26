@@ -58,17 +58,9 @@ const ScatterChart = ({
             x: {
                 type: 'linear',
                 position: 'bottom',
-                title: {
-                    display: true,
-                    text: xField
-                },
                 grid: { color: 'rgba(0, 0, 0, 0.1)' }
             },
             y: {
-                title: {
-                    display: true,
-                    text: yField
-                },
                 grid: { color: 'rgba(0, 0, 0, 0.1)' }
             }
         }

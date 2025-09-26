@@ -1,14 +1,26 @@
 import React, { useState } from 'react';
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import { 
+  faChartBar, 
+  faChartLine, 
+  faChartPie, 
+  faCircle, 
+  faBolt, 
+  faBullseye, 
+  faUsers, 
+  faDollarSign,
+  faSearch
+} from '@fortawesome/free-solid-svg-icons';
 
 const chartTypes = [
-  { id: "bar", name: "Bar Chart", icon: "📊", category: "Charts", description: "Compare values across categories" },
-  { id: "line", name: "Line Chart", icon: "📈", category: "Charts", description: "Show trends over time" },
-  { id: "pie", name: "Pie Chart", icon: "🥧", category: "Charts", description: "Display parts of a whole" },
-  { id: "area", name: "Area Chart", icon: "📈", category: "Charts", description: "Show cumulative data over time" },
-  { id: "activity", name: "Activity Feed", icon: "⚡", category: "Widgets", description: "Real-time activity updates" },
-  { id: "kpi", name: "KPI Card", icon: "🎯", category: "Widgets", description: "Key performance indicators" },
-  { id: "users", name: "User Stats", icon: "👥", category: "Widgets", description: "User engagement metrics" },
-  { id: "revenue", name: "Revenue Card", icon: "💰", category: "Widgets", description: "Financial performance data" },
+  { id: "bar", name: "Bar Chart", icon: faChartBar, category: "Charts", description: "Compare values across categories" },
+  { id: "line", name: "Line Chart", icon: faChartLine, category: "Charts", description: "Show trends over time" },
+  { id: "pie", name: "Pie Chart", icon: faChartPie, category: "Charts", description: "Display parts of a whole" },
+  { id: "scatter", name: "Scatter Plot", icon: faCircle, category: "Charts", description: "Show relationships between two variables" },
+  { id: "activity", name: "Activity Feed", icon: faBolt, category: "Widgets", description: "Real-time activity updates" },
+  { id: "kpi", name: "KPI Card", icon: faBullseye, category: "Widgets", description: "Key performance indicators" },
+  { id: "users", name: "User Stats", icon: faUsers, category: "Widgets", description: "User engagement metrics" },
+  { id: "revenue", name: "Revenue Card", icon: faDollarSign, category: "Widgets", description: "Financial performance data" },
 ];
 
 const ChartSidebar = ({ isVisible }) => {
@@ -36,9 +48,7 @@ const ChartSidebar = ({ isVisible }) => {
       <div className="p-4 border-b border-dashboard-border">
         <h2 className="text-lg font-semibold text-foreground mb-3">Components</h2>
         <div className="relative">
-          <svg className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-          </svg>
+          <FontAwesomeIcon icon={faSearch} className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground w-4 h-4" />
           <input
             placeholder="Search components..."
             value={searchTerm}
@@ -79,7 +89,7 @@ const ChartSidebar = ({ isVisible }) => {
                   >
                     <div className="flex flex-col items-center gap-2 text-center">
                       <div className="w-8 h-8 bg-gradient-primary rounded-lg flex items-center justify-center group-hover:shadow-glow transition-smooth">
-                        <span className="text-primary-foreground text-sm">{chart.icon}</span>
+                        <FontAwesomeIcon icon={chart.icon} className="text-primary-foreground text-sm" />
                       </div>
                       <span className="text-xs font-medium text-foreground leading-tight">
                         {chart.name}

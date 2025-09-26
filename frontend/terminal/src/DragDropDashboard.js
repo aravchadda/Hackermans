@@ -164,11 +164,11 @@ const DragDropDashboard = () => {
                             </div>
                         </div>
                     ) : (
-                        <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-4 min-h-[200vh]">
+                        <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-4 ">
                             {dashboardCharts.map((chart) => (
                                 <div
                                     key={chart.id}
-                                    className="bg-white dark:bg-slate-800 rounded-lg shadow-sm border border-slate-200 dark:border-slate-700 "
+                                    className="bg-white dark:bg-slate-800 rounded-lg mb-50 shadow-sm border border-slate-200 dark:border-slate-700 "
                                 >
                                     {/* Chart Header */}
                                     <div className="flex items-center justify-between p-3 bg-slate-50 dark:bg-slate-700 border-b border-slate-200 dark:border-slate-600">

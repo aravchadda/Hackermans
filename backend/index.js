@@ -14,7 +14,7 @@ app.use(cors({
 
 require('dotenv').config();
 
-const PORT = process.env.PORT || 5000;
+const PORT = process.env.PORT || 4000;
 app.use(express.json());
 
 // Handle preflight requests
@@ -247,28 +247,21 @@ app.get('/api/shipments/chart-data', async (req, res) => {
         // Build WHERE conditions for range filters
         let whereConditions = [`${xAxis} IS NOT NULL`, `${yAxis} IS NOT NULL`];
         
-        console.log('Range filter parameters:', { xMin, xMax, yMin, yMax });
-        
         // Apply range filters to the actual selected columns
         if (xMin !== undefined && xMin !== '') {
             whereConditions.push(`${xAxis} >= ${parseFloat(xMin)}`);
-            console.log(`Applied xMin filter: ${xAxis} >= ${parseFloat(xMin)}`);
         }
         if (xMax !== undefined && xMax !== '') {
             whereConditions.push(`${xAxis} <= ${parseFloat(xMax)}`);
-            console.log(`Applied xMax filter: ${xAxis} <= ${parseFloat(xMax)}`);
         }
         if (yMin !== undefined && yMin !== '') {
             whereConditions.push(`${yAxis} >= ${parseFloat(yMin)}`);
-            console.log(`Applied yMin filter: ${yAxis} >= ${parseFloat(yMin)}`);
         }
         if (yMax !== undefined && yMax !== '') {
             whereConditions.push(`${yAxis} <= ${parseFloat(yMax)}`);
-            console.log(`Applied yMax filter: ${yAxis} <= ${parseFloat(yMax)}`);
         }
         
         const whereClause = whereConditions.join(' AND ');
-        console.log('Final WHERE clause:', whereClause);
         
         // Always return simple x-y pairs without aggregation
         const query = `
@@ -288,8 +281,7 @@ app.get('/api/shipments/chart-data', async (req, res) => {
             data,
             count: data.length,
             xAxis,
-            yAxis,
-            groupBy: groupBy === 'true'
+            yAxis
         });
     } catch (error) {
         console.error('Error fetching chart data:', error);

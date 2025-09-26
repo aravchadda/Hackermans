@@ -19,3 +19,18 @@ export const sampleFields = [
     { name: 'salary', type: 'quantitative', description: 'Annual Salary' },
     { name: 'experience', type: 'quantitative', description: 'Years of Experience' }
 ];
+
+// Shipment data fields from CSV
+export const shipmentFields = [
+    { name: 'GrossQuantity', type: 'quantitative', description: 'Gross quantity of items shipped' },
+    { name: 'FlowRate', type: 'quantitative', description: 'Flow rate measurement for shipment processing' },
+    { name: 'ShipmentCompartmentID', type: 'nominal', description: 'Unique identifier for shipment compartment' },
+    { name: 'BaseProductID', type: 'nominal', description: 'Unique identifier for base product' },
+    { name: 'BaseProductCode', type: 'nominal', description: 'Product code identifier' },
+    { name: 'ShipmentID', type: 'nominal', description: 'Unique identifier for shipment' },
+    { name: 'ShipmentCode', type: 'nominal', description: 'Shipment code identifier' },
+    { name: 'ExitTime', type: 'temporal', description: 'Timestamp when shipment exited the system' },
+    { name: 'BayCode', type: 'nominal', description: 'Bay identifier where shipment was processed' },
+    { name: 'ScheduledDate', type: 'temporal', description: 'Scheduled date for shipment processing' },
+    { name: 'CreatedTime', type: 'temporal', description: 'Timestamp when shipment record was created' }
+];
