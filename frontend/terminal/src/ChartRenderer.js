@@ -252,6 +252,12 @@ const ChartRenderer = ({
                 return <Doughnut {...chartProps} />;
             case 'scatter':
                 return <Line {...chartProps} />;
+            case 'histogram':
+                return <Bar {...chartProps} />;
+            case 'area':
+                return <Line {...chartProps} />;
+            case 'heatmap':
+                return <Bar {...chartProps} />;
             default:
                 return <Bar {...chartProps} />;
         }
