@@ -128,7 +128,7 @@ const loadShipmentData = async () => {
     const shipmentCount = await runQueryCount('SELECT COUNT(*) as count FROM shipments');
     
     if (shipmentCount === 0) {
-      console.log('📦 Loading shipment data from CSV...');
+      console.log(' Loading shipment data from CSV...');
       
       // Use DuckDB's CSV reading capability
       await runQuery(`

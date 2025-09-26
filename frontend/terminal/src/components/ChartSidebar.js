@@ -53,7 +53,7 @@ const ChartSidebar = ({ isVisible }) => {
             placeholder="Search components..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            className="w-full pl-9 pr-3 py-2 h-9 text-sm border border-slate-200 dark:border-slate-600 rounded-md bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 placeholder:text-slate-500 dark:placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            className="w-full pl-9 pr-3 py-2 h-9 text-sm border border-slate-200 dark:border-slate-600 rounded-md bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 placeholder:text-slate-500 dark:placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
           />
         </div>
       </div>
@@ -88,8 +88,8 @@ const ChartSidebar = ({ isVisible }) => {
                     title={chart.description}
                   >
                     <div className="flex flex-col items-center gap-2 text-center">
-                      <div className="w-8 h-8 bg-blue-600 dark:bg-blue-500 rounded-lg flex items-center justify-center group-hover:shadow-lg transition-all duration-200">
-                        <FontAwesomeIcon icon={chart.icon} className="text-white text-sm" />
+                      <div className="w-8 h-8 bg-primary rounded-lg flex items-center justify-center group-hover:shadow-lg transition-all duration-200">
+                        <FontAwesomeIcon icon={chart.icon} className="text-primary-foreground text-sm" />
                       </div>
                       <span className="text-xs font-medium text-slate-900 dark:text-slate-100 leading-tight">
                         {chart.name}
