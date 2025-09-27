@@ -1175,7 +1175,7 @@ const DashboardCanvas = forwardRef(({ mode, showChat, onCreateChart, onDeleteCha
   return (
     <main className="flex-1 bg-dashboard-bg overflow-auto min-h-0 pb-8">
       <div
-        className={`w-full transition-smooth ${
+        className={`w-full relative transition-smooth ${
           dragOver ? "bg-primary/5 border-2 border-dashed border-primary" : ""
         }`}
         onDrop={handleDrop}
@@ -1183,15 +1183,15 @@ const DashboardCanvas = forwardRef(({ mode, showChat, onCreateChart, onDeleteCha
         onDragLeave={handleDragLeave}
         style={{
           ...getGridLayout(),
-          backgroundImage: mode === "design" ? `
+          backgroundImage: `
             linear-gradient(to right, rgba(0,0,0,0.05) 1px, transparent 1px),
             linear-gradient(to bottom, rgba(0,0,0,0.05) 1px, transparent 1px)
-          ` : 'none',
+          `,
           backgroundSize: '20px 20px'
         }}
       >
         {items.length === 0 ? (
-          <div className="h-full flex items-center justify-center">
+          <div className="absolute inset-0 flex items-center justify-center pt-32">
             <div className="text-center max-w-md">
               <div className="w-20 h-20 bg-gradient-primary rounded-full flex items-center justify-center mx-auto mb-4 shadow-glow">
                 <svg className="w-10 h-10 text-primary-foreground" fill="none" stroke="currentColor" viewBox="0 0 24 24">

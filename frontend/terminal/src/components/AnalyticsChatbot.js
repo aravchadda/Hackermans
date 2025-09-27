@@ -7,7 +7,7 @@ const AnalyticsChatbot = () => {
     {
       id: 1,
       type: 'bot',
-      content: 'Welcome to Custom Analytics! I can help you analyze your shipment data using natural language. Try asking:\n\n• "Show me shipment delays"\n• "Which bays have the highest utilization?"\n• "Find shipments with flow rate anomalies"\n• "What are the top performing products?"\n• "Show me average flow rates by bay"\n\nJust ask your question in plain English and I\'ll convert it to SQL and show you the results!',
+      content: 'Welcome to Business Insights Bot! I can help you analyze your shipment data using natural language. Try asking:\n\n• "Show me shipment delays"\n• "Which bays have the highest utilization?"\n• "Find shipments with flow rate anomalies"\n• "What are the top performing products?"\n• "Show me average flow rates by bay"\n\nJust ask your question in plain English and I\'ll convert it to SQL and show you the results!',
       timestamp: new Date()
     }
   ]);
@@ -152,14 +152,18 @@ const AnalyticsChatbot = () => {
   };
 
   return (
-    <div className="h-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl m-4 mt-12 flex flex-col shadow-sm" style={{ height: 'calc(100vh - 96px)' }}>
+    <div className="h-full bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-700 rounded-xl m-4 mt-0 flex flex-col shadow-sm" style={{ height: 'calc(100vh - 64px)' }}>
       {/* Header */}
-      <div className="bg-slate-100 dark:bg-slate-700 border-b border-slate-200 dark:border-slate-600 p-4 rounded-t-xl">
+      <div className="bg-red-800 dark:bg-red-900 border-b border-red-600 dark:border-red-700 p-4 rounded-t-xl">
         <div className="flex items-center gap-3">
-          <div className="w-3 h-3 bg-green-500 rounded-full animate-pulse"></div>
-          <h3 className="text-slate-900 dark:text-slate-100 font-semibold text-2xl">Custom Analytics</h3>
+          <div className="w-8 h-8 bg-red-600 rounded-full flex items-center justify-center">
+            <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+            </svg>
+          </div>
+          <h3 className="text-white font-semibold text-2xl">Business Insights Bot</h3>
         </div>
-        <p className="text-slate-600 dark:text-slate-400 text-sm mt-1">AI-powered analytics insights & custom analysis</p>
+        <p className="text-red-100 text-sm mt-1">AI-powered analytics insights & custom analysis</p>
       </div>
 
       {/* Messages */}

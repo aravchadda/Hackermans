@@ -364,7 +364,7 @@ const DelayAnalysisDisplay = ({ onClose }) => {
       </div>
 
       {/* Charts */}
-      <div className="flex-1 p-4">
+      <div className="flex-1 p-4 overflow-auto">
         {selectedView === 'overview' && (
           <div className="h-full">
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 h-full">

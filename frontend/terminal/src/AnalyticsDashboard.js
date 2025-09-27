@@ -64,22 +64,22 @@ const AnalyticsDashboard = () => {
   };
 
   return (
-    <div className={`h-full w-full bg-slate-50 dark:bg-slate-900 flex flex-col overflow-hidden transition-all duration-500 ${isFullScreen ? 'scale-100 opacity-100' : 'scale-95 opacity-0'}`} style={{ height: 'calc(100vh - 64px)' }}>
+    <div className={`h-full w-full bg-gray-200 dark:bg-gray-800 flex flex-col overflow-auto transition-all duration-500 ${isFullScreen ? 'scale-100 opacity-100' : 'scale-95 opacity-0'}`} style={{ height: 'calc(100vh - 64px)' }}>
       {/* Animation Overlay */}
       {isAnimating && (
-        <div className="fixed inset-0 bg-slate-50 dark:bg-slate-900 z-50 flex items-center justify-center animate-in fade-in duration-500">
+        <div className="fixed inset-0 bg-gray-200 dark:bg-gray-800 z-50 flex items-center justify-center animate-in fade-in duration-500">
         </div>
       )}
       
       {/* Main Content - Split Layout */}
       <div className="flex-1 w-full flex" style={{ height: 'calc(100% - 0px)' }}>
         {/* Left Half - Preset Analytics */}
-        <div className="w-1/2 h-full flex flex-col p-4" style={{ height: 'calc(100vh - 64px)' }}>
-          <div className="h-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl flex flex-col shadow-sm" style={{ height: 'calc(100vh - 96px)' }}>
+        <div className="w-1/2 h-full flex flex-col p-4 overflow-auto" style={{ height: 'calc(100vh - 64px)' }}>
+          <div className="h-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl flex flex-col shadow-sm overflow-auto" style={{ height: 'calc(100vh - 96px)' }}>
             {expandedBox ? (
               // Fullscreen Popup Overlay with gaps
-              <div className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-8">
-                <div className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl w-full h-full flex flex-col animate-in fade-in duration-500 shadow-2xl">
+              <div className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-8 overflow-auto">
+                <div className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl w-full h-full flex flex-col animate-in fade-in duration-500 shadow-2xl overflow-auto">
                   {expandedBox === 1 ? (
                     // Anomaly Detection Display
                     <div className="h-full">

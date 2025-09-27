@@ -425,7 +425,7 @@ const PredictiveForecastingDisplay = ({ onClose }) => {
       </div>
 
       {/* Chart */}
-      <div className="flex-1 p-4">
+      <div className="flex-1 p-4 overflow-auto">
         {chartData ? (
           <div className="h-full w-full" style={{ minHeight: '500px' }}>
             <Line 

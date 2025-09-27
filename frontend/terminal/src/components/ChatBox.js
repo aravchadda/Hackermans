@@ -5,7 +5,7 @@ const ChatBox = ({ isVisible, onClose, onCreateChart, onDeleteChart, onUpdateCha
   const [messages, setMessages] = useState([
     {
       id: 1,
-      text: "Hello! I'm your AI assistant. How can I help you with your dashboard today?",
+      text: "Hello! I'm Graphy AI bot. How can I help you with your dashboard today?",
       sender: "ai",
       timestamp: new Date().toLocaleTimeString()
     }
@@ -164,20 +164,20 @@ const ChatBox = ({ isVisible, onClose, onCreateChart, onDeleteChart, onUpdateCha
   return (
     <div className="w-80 bg-white dark:bg-slate-800 border-l border-slate-200 dark:border-slate-700 flex flex-col h-full">
       {/* Chat Header */}
-      <div className="p-4 border-b border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-700">
+      <div className="p-4 border-b border-red-200 dark:border-red-700 bg-red-50 dark:bg-red-900/20">
         <div className="flex items-center justify-between mb-3">
           <div className="flex items-center gap-3">
-            <div className="w-8 h-8 bg-gradient-primary rounded-full flex items-center justify-center">
-              <span className="text-primary-foreground text-sm">🤖</span>
+            <div className="w-8 h-8 bg-red-500 rounded-full flex items-center justify-center">
+              <span className="text-white text-sm">🤖</span>
             </div>
             <div>
-              <h3 className="text-sm font-medium text-slate-900 dark:text-slate-100">AI Assistant</h3>
-              <p className="text-xs text-slate-500 dark:text-slate-400">Online</p>
+              <h3 className="text-sm font-medium text-red-900 dark:text-red-100">Graphy AI bot</h3>
+              <p className="text-xs text-red-600 dark:text-red-400">Online</p>
             </div>
           </div>
           <button
             onClick={onClose}
-            className="p-1 text-slate-500 dark:text-slate-400 hover:text-red-600 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 rounded"
+            className="p-1 text-red-500 dark:text-red-400 hover:text-red-700 dark:hover:text-red-300 hover:bg-red-100 dark:hover:bg-red-800/30 rounded"
             title="Close Chat"
           >
             ✕
@@ -207,14 +207,14 @@ const ChatBox = ({ isVisible, onClose, onCreateChart, onDeleteChart, onUpdateCha
       </div>
 
       {/* Input */}
-      <div className="p-4 border-t border-slate-200 dark:border-slate-700">
+      <div className="p-4 border-t border-red-200 dark:border-red-700">
         <form onSubmit={handleSendMessage} className="flex gap-2">
           <input
             type="text"
             value={inputText}
             onChange={(e) => setInputText(e.target.value)}
             placeholder="Ask me anything..."
-            className="flex-1 px-3 py-2 text-sm border border-slate-200 dark:border-slate-600 rounded-lg focus:outline-none focus:ring-1 focus:ring-blue-500 bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100"
+            className="flex-1 px-3 py-2 text-sm border border-red-200 dark:border-red-600 rounded-lg focus:outline-none focus:ring-1 focus:ring-red-500 bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100"
           />
           <button
             type="submit"
@@ -222,7 +222,7 @@ const ChatBox = ({ isVisible, onClose, onCreateChart, onDeleteChart, onUpdateCha
             className={`px-4 py-2 rounded-lg transition-colors text-sm font-medium ${
               isLoading 
                 ? 'bg-gray-400 text-gray-200 cursor-not-allowed' 
-                : 'bg-blue-500 text-white hover:bg-blue-600'
+                : 'bg-red-500 text-white hover:bg-red-600'
             }`}
           >
             {isLoading ? 'Creating...' : 'Send'}
