@@ -63,7 +63,7 @@ const CreativeDashboard = ({ mode: initialMode = "view", userRole = "operator" }
   // Handle analytics mode with special styling
   if (mode === "analytics") {
     return (
-      <div className="h-screen bg-slate-50 dark:bg-slate-900 flex flex-col overflow-hidden">
+      <div className="h-screen bg-gray-200 dark:bg-gray-800 flex flex-col overflow-hidden">
         <DashboardHeader 
           mode={mode} 
           onModeChange={setMode} 

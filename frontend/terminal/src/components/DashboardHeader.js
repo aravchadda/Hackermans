@@ -54,7 +54,7 @@ const DashboardHeader = ({ mode, onModeChange, showChat, onToggleChat, userRole 
        
         
         {/* Chat Button */}
-        {mode !== "analytics" && (
+        {mode !== "analytics" && mode === "design" && (
           <button 
             onClick={onToggleChat}
             className={`h-8 px-3 text-sm font-medium border border-slate-200 dark:border-slate-600 rounded-md hover:bg-slate-100 dark:hover:bg-slate-700 transition-all duration-200 flex items-center gap-1.5 text-slate-700 dark:text-slate-300 ${
