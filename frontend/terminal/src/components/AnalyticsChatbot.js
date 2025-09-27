@@ -1,16 +1,19 @@
 import React, { useState, useRef, useEffect } from 'react';
+import { apiService } from '../services/api';
+import QueryResultTable from './QueryResultTable';
 
 const AnalyticsChatbot = () => {
   const [messages, setMessages] = useState([
     {
       id: 1,
       type: 'bot',
-      content: 'Welcome to Custom Analytics. I can help you create custom analytics queries, analyze specific data patterns, explain anomaly detection results, and provide personalized insights for your analytics needs.',
+      content: 'Welcome to Custom Analytics! I can help you analyze your shipment data using natural language. Try asking:\n\n• "Show me shipment delays"\n• "Which bays have the highest utilization?"\n• "Find shipments with flow rate anomalies"\n• "What are the top performing products?"\n• "Show me average flow rates by bay"\n\nJust ask your question in plain English and I\'ll convert it to SQL and show you the results!',
       timestamp: new Date()
     }
   ]);
   const [inputValue, setInputValue] = useState('');
   const [isTyping, setIsTyping] = useState(false);
+  const [availableQueries, setAvailableQueries] = useState([]);
   const messagesEndRef = useRef(null);
 
   const scrollToBottom = () => {
@@ -21,8 +24,33 @@ const AnalyticsChatbot = () => {
     scrollToBottom();
   }, [messages]);
 
+  // Load available queries on component mount
+  useEffect(() => {
+    const loadAvailableQueries = async () => {
+      try {
+        console.log('🔄 Loading available queries...');
+        const response = await apiService.getInsightsQueries();
+        console.log('📡 API response:', response);
+        
+        if (response && response.queries) {
+          setAvailableQueries(response.queries);
+          console.log('✅ Loaded available queries:', response.queries);
+        } else {
+          console.log('❌ No queries found in response');
+        }
+      } catch (error) {
+        console.error('💥 Error loading available queries:', error);
+      }
+    };
+    
+    loadAvailableQueries();
+  }, []);
+
   const handleSendMessage = async () => {
     if (!inputValue.trim()) return;
+
+    console.log('🚀 Send button pressed! User input:', inputValue);
+    console.log('📊 Available queries:', availableQueries);
 
     const userMessage = {
       id: messages.length + 1,
@@ -32,47 +60,88 @@ const AnalyticsChatbot = () => {
     };
 
     setMessages(prev => [...prev, userMessage]);
+    const userQuery = inputValue;
     setInputValue('');
     setIsTyping(true);
 
-    // Simulate bot response
-    setTimeout(() => {
-      const botResponse = generateBotResponse(inputValue);
-      const botMessage = {
+    try {
+      console.log('🚀 Sending natural language query to API:', userQuery);
+      
+      // Send the natural language query to the insights API
+      const result = await apiService.executeInsightsQuery(userQuery);
+      console.log('📋 Query execution result:', result);
+      
+      if (result && result.success) {
+        const botMessage = {
+          id: messages.length + 2,
+          type: 'bot',
+          content: `Here are the results for your query: "${userQuery}"`,
+          timestamp: new Date(),
+          queryResults: result.data,
+          sqlQuery: result.sql_query,
+          description: result.description
+        };
+        setMessages(prev => [...prev, botMessage]);
+      } else {
+        const errorMessage = {
+          id: messages.length + 2,
+          type: 'bot',
+          content: `I encountered an error executing your query: "${userQuery}". Please try rephrasing your question or check if the query is valid.`,
+          timestamp: new Date()
+        };
+        setMessages(prev => [...prev, errorMessage]);
+      }
+    } catch (error) {
+      console.error('💥 Error processing query:', error);
+      const errorMessage = {
         id: messages.length + 2,
         type: 'bot',
-        content: botResponse,
+        content: 'I encountered an error processing your request. Please try again or rephrase your question.',
         timestamp: new Date()
       };
-      setMessages(prev => [...prev, botMessage]);
+      setMessages(prev => [...prev, errorMessage]);
+    } finally {
       setIsTyping(false);
-    }, 1500);
+    }
+  };
+
+  const findMatchingQuery = (userInput) => {
+    const input = userInput.toLowerCase();
+    console.log('🔍 Searching for query matching:', input);
+    console.log('📋 Available queries for matching:', availableQueries);
+    
+    // Simple keyword matching - you can make this more sophisticated
+    for (const query of availableQueries) {
+      const description = query.description.toLowerCase();
+      const keywords = query.keywords || [];
+      
+      console.log(`🔎 Checking query: ${query.identifier} - "${description}"`);
+      
+      // Check if any keywords match or if description contains user input
+      if (keywords.some(keyword => input.includes(keyword.toLowerCase())) ||
+          description.includes(input) ||
+          input.includes(description.split(' ')[0])) {
+        console.log(`✅ Found match: ${query.identifier}`);
+        return query;
+      }
+    }
+    
+    console.log('❌ No matching query found');
+    return null;
   };
 
   const generateBotResponse = (userInput) => {
     const input = userInput.toLowerCase();
     
-    if (input.includes('anomaly') || input.includes('detection')) {
-      return "Anomaly detection uses machine learning algorithms to identify unusual patterns in your data. The system has detected 4,950 anomalies out of 98,998 total records, representing a 5.0% anomaly rate. Peak anomaly times are 22:00-23:00, with Sunday showing the highest frequency.";
-    }
-    
-    if (input.includes('predictive') || input.includes('forecast')) {
-      return "Predictive forecasting analyzes historical patterns to predict future trends. This module uses time series analysis and machine learning models to forecast outcomes with high accuracy. It can help you anticipate delays, optimize scheduling, and improve operational efficiency.";
-    }
-    
-    if (input.includes('delay') || input.includes('time')) {
-      return "Delay time analysis identifies bottlenecks and delay patterns in your operations. It analyzes factors like bay utilization, product flow rates, and scheduling conflicts to provide actionable insights for process optimization.";
-    }
-    
-    if (input.includes('pattern') || input.includes('trend')) {
-      return "Pattern analysis reveals hidden insights in your data. The system identifies recurring anomalies, seasonal trends, and operational patterns that can help optimize your processes and reduce inefficiencies.";
-    }
-    
     if (input.includes('help') || input.includes('what can you do')) {
-      return "I can help you with:\n• Explaining anomaly detection results\n• Analyzing data patterns and trends\n• Interpreting predictive forecasting models\n• Understanding delay time analysis\n• Providing insights on operational optimization\n\nJust ask me about any aspect of your analytics!";
+      return `I can help you analyze your shipment data using natural language! Here are some examples:\n\n• "Show me shipment delays"\n• "Which bays have the highest utilization?"\n• "Find shipments with flow rate anomalies"\n• "What are the top performing products?"\n• "Show me average flow rates by bay"\n• "How many shipments were processed today?"\n\nJust ask your question in plain English and I'll convert it to SQL and show you the results!`;
     }
     
-    return "I understand you're asking about analytics. I can help explain anomaly detection results, predictive forecasting models, delay time analysis, or any other analytics-related questions. Could you be more specific about what you'd like to know?";
+    if (input.includes('tables') || input.includes('schema') || input.includes('columns')) {
+      return `The main table available is 'shipments' with columns like:\n• ShipmentID, ShipmentCode\n• BayCode, BaseProductID, BaseProductCode\n• GrossQuantity, FlowRate\n• ExitTime, ScheduledDate, CreatedTime\n• ShipmentCompartmentID\n\nTry asking questions like "Show me the first 5 shipments" or "What are the different bay codes?"`;
+    }
+    
+    return `I can help you analyze your shipment data! Try asking questions like:\n\n• "Show me shipment delays"\n• "Which bays are most active?"\n• "Find high flow rate shipments"\n• "What products are being shipped?"\n\nType "help" to see more examples!`;
   };
 
   const handleKeyPress = (e) => {
@@ -101,13 +170,24 @@ const AnalyticsChatbot = () => {
             className={`flex ${message.type === 'user' ? 'justify-end' : 'justify-start'}`}
           >
             <div
-              className={`max-w-xs lg:max-w-md px-4 py-3 rounded-lg ${
+              className={`max-w-xs lg:max-w-lg px-4 py-3 rounded-lg ${
                 message.type === 'user'
                   ? 'bg-blue-600 text-white'
                   : 'bg-slate-100 dark:bg-slate-700 text-slate-900 dark:text-slate-100 border border-slate-200 dark:border-slate-600'
               }`}
             >
               <p className="text-sm whitespace-pre-wrap">{message.content}</p>
+              
+              {/* Display query results table if available */}
+              {message.queryResults && (
+                <div className="mt-3">
+                  <QueryResultTable 
+                    data={message.queryResults} 
+                    title="Query Results"
+                  />
+                </div>
+              )}
+              
               <p className="text-xs opacity-60 mt-1">
                 {message.timestamp.toLocaleTimeString()}
               </p>
@@ -137,7 +217,7 @@ const AnalyticsChatbot = () => {
             value={inputValue}
             onChange={(e) => setInputValue(e.target.value)}
             onKeyPress={handleKeyPress}
-            placeholder="Create custom analytics queries, analyze data patterns..."
+            placeholder="Ask about your shipment data (e.g., Show me shipment delays)..."
             className="flex-1 bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 placeholder-slate-400 dark:placeholder-slate-500 border border-slate-200 dark:border-slate-600 rounded-lg px-4 py-2 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
           />
           <button

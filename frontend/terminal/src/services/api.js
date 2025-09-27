@@ -189,5 +189,53 @@ export const apiService = {
       console.error('Error headers:', error.response?.headers);
       throw error; // Re-throw to let the component handle it
     }
+  },
+
+  // Analytics insights queries endpoint
+  async getInsightsQueries() {
+    try {
+      console.log('🔄 Fetching insights queries from:', '/insights/queries');
+      const response = await apiClient.get('/insights/queries');
+      console.log('📡 Insights queries API response:', response.data);
+      
+      if (response.data && response.data.success) {
+        console.log('✅ Successfully fetched insights queries:', response.data.queries);
+        return response.data;
+      } else {
+        console.error('❌ API returned success: false', response.data);
+        return null;
+      }
+    } catch (error) {
+      console.error('💥 Error fetching insights queries:', error);
+      console.error('Error details:', error.response?.data);
+      throw error;
+    }
+  },
+
+  // Execute insights query endpoint
+  async executeInsightsQuery(query) {
+    try {
+      console.log('🚀 Executing insights query:', query);
+      
+      const payload = {
+        query: query
+      };
+      
+      console.log('📤 Sending payload:', payload);
+      const response = await apiClient.post('/insights/execute', payload);
+      console.log('📡 Execute query API response:', response.data);
+      
+      if (response.data && response.data.success) {
+        console.log('✅ Query executed successfully:', response.data);
+        return response.data;
+      } else {
+        console.error('❌ API returned success: false', response.data);
+        return null;
+      }
+    } catch (error) {
+      console.error('💥 Error executing insights query:', error);
+      console.error('Error details:', error.response?.data);
+      throw error;
+    }
   }
 };
