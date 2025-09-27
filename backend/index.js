@@ -1,6 +1,9 @@
 const express = require('express');
 const cors = require('cors');
 const axios = require('axios');
+const multer = require('multer');
+const path = require('path');
+const fs = require('fs');
 const { connectDatabase, runQuery, runQueryFirst, runQueryCount } = require('./database');
 
 const app = express();
@@ -17,6 +20,27 @@ require('dotenv').config();
 
 const PORT = process.env.PORT || 4000;
 app.use(express.json());
+
+// Configure multer for file uploads
+const storage = multer.diskStorage({
+  destination: function (req, file, cb) {
+    cb(null, './uploads/')
+  },
+  filename: function (req, file, cb) {
+    cb(null, Date.now() + '-' + file.originalname)
+  }
+});
+
+const upload = multer({ 
+  storage: storage,
+  fileFilter: function (req, file, cb) {
+    if (file.mimetype === 'text/csv' || file.originalname.endsWith('.csv')) {
+      cb(null, true);
+    } else {
+      cb(new Error('Only CSV files are allowed!'), false);
+    }
+  }
+});
 
 // Handle preflight requests
 app.options('*', cors());
@@ -789,6 +813,58 @@ app.delete('/api/layout', async (req, res) => {
     } catch (error) {
         console.error('Error clearing layout:', error);
         res.status(500).json({ success: false, error: error.message });
+    }
+});
+
+// CSV Import endpoint
+app.post('/api/import/csv', upload.single('csvFile'), async (req, res) => {
+    try {
+        if (!req.file) {
+            return res.status(400).json({
+                success: false,
+                error: 'No CSV file provided'
+            });
+        }
+
+        const filePath = req.file.path;
+        const tableName = req.body.tableName || 'shipments';
+        
+        console.log(`Importing CSV file: ${filePath} to table: ${tableName}`);
+
+        // Clear existing data from the table
+        await runQuery(`DELETE FROM ${tableName}`);
+        
+        // Import CSV data using DuckDB's read_csv_auto function
+        await runQuery(`
+            INSERT INTO ${tableName} 
+            SELECT * FROM read_csv_auto('${filePath}', header=true)
+        `);
+
+        // Get the count of imported records
+        const count = await runQueryCount(`SELECT COUNT(*) as count FROM ${tableName}`);
+        
+        // Clean up the uploaded file
+        fs.unlinkSync(filePath);
+
+        res.json({
+            success: true,
+            message: `Successfully imported ${count} records from CSV`,
+            recordCount: count,
+            tableName: tableName
+        });
+
+    } catch (error) {
+        console.error('Error importing CSV:', error);
+        
+        // Clean up file if it exists
+        if (req.file && fs.existsSync(req.file.path)) {
+            fs.unlinkSync(req.file.path);
+        }
+        
+        res.status(500).json({
+            success: false,
+            error: error.message
+        });
     }
 });
 
