@@ -9,7 +9,10 @@ import {
   faBullseye, 
   faUsers, 
   faDollarSign,
-  faSearch
+  faSearch,
+  faChartArea,
+  faChartColumn,
+  faFire
 } from '@fortawesome/free-solid-svg-icons';
 
 const chartTypes = [
@@ -17,6 +20,9 @@ const chartTypes = [
   { id: "line", name: "Line Chart", icon: faChartLine, category: "Charts", description: "Show trends over time" },
   { id: "pie", name: "Pie Chart", icon: faChartPie, category: "Charts", description: "Display parts of a whole" },
   { id: "scatter", name: "Scatter Plot", icon: faCircle, category: "Charts", description: "Show relationships between two variables" },
+  { id: "area", name: "Area Chart", icon: faChartArea, category: "Charts", description: "Show trends with filled areas" },
+  { id: "histogram", name: "Histogram", icon: faChartColumn, category: "Charts", description: "Show data distribution" },
+  { id: "heatmap", name: "Heatmap", icon: faFire, category: "Charts", description: "Show data intensity with colors" },
   { id: "activity", name: "Activity Feed", icon: faBolt, category: "Widgets", description: "Real-time activity updates" },
   { id: "kpi", name: "KPI Card", icon: faBullseye, category: "Widgets", description: "Key performance indicators" },
   { id: "users", name: "User Stats", icon: faUsers, category: "Widgets", description: "User engagement metrics" },
