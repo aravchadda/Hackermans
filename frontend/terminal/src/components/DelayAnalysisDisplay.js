@@ -281,7 +281,7 @@ const DelayAnalysisDisplay = ({ onClose }) => {
   const hourlyChartData = getHourlyChartData();
 
   return (
-    <div className="h-full bg-white dark:bg-slate-800 flex flex-col">
+    <div className="h-full bg-white dark:bg-slate-800 flex flex-col overflow-y-auto">
       {/* Header */}
       <div className="p-4 border-b border-slate-200 dark:border-slate-700">
         <div className="flex items-center justify-between">
@@ -364,10 +364,10 @@ const DelayAnalysisDisplay = ({ onClose }) => {
       </div>
 
       {/* Charts */}
-      <div className="flex-1 p-4 overflow-auto">
+      <div className="flex-1 p-4">
         {selectedView === 'overview' && (
-          <div className="h-full">
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 h-full">
+          <div>
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
               <div className="h-96">
                 {bayChartData && (
                   <Bar data={bayChartData} options={getChartOptions('Bay Performance Analysis', true)} />
@@ -383,7 +383,7 @@ const DelayAnalysisDisplay = ({ onClose }) => {
         )}
 
         {selectedView === 'bay' && bayChartData && (
-          <div className="h-full">
+          <div>
             <div className="h-96">
               <Bar data={bayChartData} options={getChartOptions('Bay Performance Analysis', true)} />
             </div>
@@ -391,7 +391,7 @@ const DelayAnalysisDisplay = ({ onClose }) => {
         )}
 
         {selectedView === 'product' && productChartData && (
-          <div className="h-full">
+          <div>
             <div className="h-96">
               <Bar data={productChartData} options={getChartOptions('Product Delay Analysis')} />
             </div>
@@ -399,7 +399,7 @@ const DelayAnalysisDisplay = ({ onClose }) => {
         )}
 
         {selectedView === 'hourly' && hourlyChartData && (
-          <div className="h-full">
+          <div>
             <div className="h-96">
               <Bar data={hourlyChartData} options={getChartOptions('Hourly Delay Patterns')} />
             </div>

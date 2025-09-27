@@ -5,10 +5,6 @@ import {
   faChartLine, 
   faChartPie, 
   faCircle, 
-  faBolt, 
-  faBullseye, 
-  faUsers, 
-  faDollarSign,
   faSearch,
   faChartArea,
   faChartColumn,
@@ -23,10 +19,6 @@ const chartTypes = [
   { id: "area", name: "Area Chart", icon: faChartArea, category: "Charts", description: "Show trends with filled areas" },
   { id: "histogram", name: "Histogram", icon: faChartColumn, category: "Charts", description: "Show data distribution" },
   { id: "heatmap", name: "Heatmap", icon: faFire, category: "Charts", description: "Show data intensity with colors" },
-  { id: "activity", name: "Activity Feed", icon: faBolt, category: "Widgets", description: "Real-time activity updates" },
-  { id: "kpi", name: "KPI Card", icon: faBullseye, category: "Widgets", description: "Key performance indicators" },
-  { id: "users", name: "User Stats", icon: faUsers, category: "Widgets", description: "User engagement metrics" },
-  { id: "revenue", name: "Revenue Card", icon: faDollarSign, category: "Widgets", description: "Financial performance data" },
 ];
 
 const ChartSidebar = ({ isVisible }) => {

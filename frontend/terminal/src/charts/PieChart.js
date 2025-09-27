@@ -110,8 +110,18 @@ const PieChart = ({
     }
 
     return (
-        <div style={{ height: '100%', width: '100%', minHeight: height }}>
-            <Pie data={chartData} options={options} />
+        <div 
+            className="flex items-center justify-center"
+            style={{ 
+                height: typeof height === 'string' ? height : '100%', 
+                width: '100%', 
+                minHeight: typeof height === 'number' ? height : 'auto',
+                padding: typeof height === 'string' ? '2rem' : '1rem'
+            }}
+        >
+            <div className="w-full h-full flex items-center justify-center">
+                <Pie data={chartData} options={options} />
+            </div>
         </div>
     );
 };

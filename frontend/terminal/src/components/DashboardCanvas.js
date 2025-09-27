@@ -728,7 +728,7 @@ const DashboardCanvas = forwardRef(({ mode, showChat, onCreateChart, onDeleteCha
   };
 
 
-  const renderChart = (item) => {
+  const renderChart = (item, isFullscreen = false) => {
     const ChartComponent = chartComponentMap[item.type];
     const { xField, yField, yFields, title, height } = item.config;
     
@@ -810,7 +810,7 @@ const DashboardCanvas = forwardRef(({ mode, showChat, onCreateChart, onDeleteCha
       xFieldLabel: xField,  // Use actual field name for axis label
       yFieldLabel: hasMultipleYFields ? null : yField,  // Use actual field name for axis label
       title: title,
-      height: height,
+      height: isFullscreen && item.type === 'pie' ? '70vh' : height,
       // Multi-value support
       isMultiValue: hasMultipleYFields,
       yFields: hasMultipleYFields ? currentYFields : null,
@@ -1257,14 +1257,16 @@ const DashboardCanvas = forwardRef(({ mode, showChat, onCreateChart, onDeleteCha
 
             {/* Fullscreen Chart Content */}
             <div className="flex-1 p-6 overflow-hidden flex items-center justify-center">
-              <div className="w-full h-full max-w-4xl max-h-4xl flex items-center justify-center">
+              <div className="w-full h-full flex items-center justify-center">
                 {fullscreenItem.type === 'pie' ? (
-                  <div className="w-96 h-96">
-                    {renderChart(fullscreenItem)}
+                  <div className="w-full h-full max-w-4xl max-h-4xl flex items-center justify-center p-8">
+                    <div className="w-full h-full flex items-center justify-center">
+                      {renderChart(fullscreenItem, true)}
+                    </div>
                   </div>
                 ) : (
                   <div className="w-full h-full">
-                    {renderChart(fullscreenItem)}
+                    {renderChart(fullscreenItem, true)}
                   </div>
                 )}
               </div>
