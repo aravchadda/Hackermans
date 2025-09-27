@@ -9,7 +9,7 @@ import {
     Legend,
 } from 'chart.js';
 import { Bar } from 'react-chartjs-2';
-import { useDarkMode } from '../hooks/useDarkMode';
+import { useTheme } from '../ThemeContext';
 
 ChartJS.register(CategoryScale, LinearScale, BarElement, Title, Tooltip, Legend);
 
@@ -30,7 +30,7 @@ const HistogramChart = ({
     isMultiValue = false // Backend indicates multi-value data
 }) => {
     // Use custom dark mode hook for reactive theme detection
-    const isDarkMode = useDarkMode();
+    const { isDark: isDarkMode } = useTheme();
 
     const chartData = useMemo(() => {
         console.log('📊 HistogramChart - Received data:', { 

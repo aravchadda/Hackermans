@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, forwardRef, useImperativeHandle } from 'react';
 import { BarChart, LineChart, PieChart, ScatterChart, HistogramChart, AreaChart, HeatmapChart } from '../charts';
 import { apiService } from '../services/api';
 import { shipmentFields } from '../sampleData';
@@ -60,7 +60,7 @@ const mockData = {
   revenue: { value: "$84,392", subtitle: "Monthly Revenue" },
 };
 
-const DashboardCanvas = ({ mode, showChat, onCreateChart, onDeleteChart, onUpdateChart }) => {
+const DashboardCanvas = forwardRef(({ mode, showChat, onCreateChart, onDeleteChart, onUpdateChart }, ref) => {
   const [items, setItems] = useState([]);
   const [dragOver, setDragOver] = useState(false);
   const [editingItem, setEditingItem] = useState(null);
@@ -503,6 +503,11 @@ const DashboardCanvas = ({ mode, showChat, onCreateChart, onDeleteChart, onUpdat
       }
     }
   };
+
+  // Expose clearLayout function to parent component
+  useImperativeHandle(ref, () => ({
+    clearLayout
+  }));
 
   // Delete chart by name (for chatbot integration)
   const deleteChartByName = async (chartName) => {
@@ -1277,6 +1282,6 @@ const DashboardCanvas = ({ mode, showChat, onCreateChart, onDeleteChart, onUpdat
       )}
     </main>
   );
-};
+});
 
 export default DashboardCanvas;

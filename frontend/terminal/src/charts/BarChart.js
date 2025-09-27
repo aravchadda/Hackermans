@@ -9,7 +9,7 @@ import {
     Legend
 } from 'chart.js';
 import { Bar } from 'react-chartjs-2';
-import { useDarkMode } from '../hooks/useDarkMode';
+import { useTheme } from '../ThemeContext';
 
 ChartJS.register(CategoryScale, LinearScale, BarElement, Title, Tooltip, Legend);
 
@@ -28,8 +28,8 @@ const BarChart = ({
     multiValue = false, // Enable multi-valued mode
     isMultiValue = false // Backend indicates multi-value data
 }) => {
-    // Use custom dark mode hook for reactive theme detection
-    const isDarkMode = useDarkMode();
+    // Use theme context for reactive theme detection
+    const { isDark: isDarkMode } = useTheme();
 
     const chartData = useMemo(() => {
         console.log('📊 BarChart - Received data:', { 
@@ -232,6 +232,7 @@ const BarChart = ({
         }
     }, [data, xField, yField, yFieldLabel, isDarkMode, multiValue, isMultiValue, yFields, seriesLabels]);
 
+    console.log(isDarkMode)
     const options = {
         responsive: true,
         maintainAspectRatio: false,
@@ -248,7 +249,7 @@ const BarChart = ({
                 display: !!title,
                 text: title,
                 font: { size: 14, weight: 'bold' },
-                color: isDarkMode ? 'rgba(255, 255, 255, 0.9)' : 'rgba(0, 0, 0, 0.9)',
+                color: isDarkMode ? '#ffffff' : '#000000', // ✅ title text
                 padding: { top: 5, bottom: 10 }
             },
             legend: {
@@ -258,7 +259,8 @@ const BarChart = ({
                     padding: 10,
                     usePointStyle: true,
                     pointStyle: 'rect',
-                    color: isDarkMode ? 'rgba(255, 255, 255, 0.9)' : 'rgba(0, 0, 0, 0.9)'
+                    color: isDarkMode ? '#ffffff' : '#000000', // ✅ legend labels
+                    font: { size: 11, weight: '500' }
                 }
             }
         },
@@ -273,13 +275,13 @@ const BarChart = ({
                 ticks: {
                     padding: 8,
                     font: { size: 11, weight: '500' },
-                    color: isDarkMode ? 'rgba(255, 255, 255, 0.9)' : 'rgba(0, 0, 0, 0.9)'
+                    color: isDarkMode ? '#ffffff' : '#000000'// ✅ Y-axis ticks
                 },
                 title: {
                     display: true,
                     text: yFieldLabel || yField || 'Y Axis',
                     font: { size: 12, weight: 'bold' },
-                    color: isDarkMode ? 'rgba(255, 255, 255, 0.9)' : 'rgba(0, 0, 0, 0.9)',
+                    color: isDarkMode ? '#ffffff' : '#000000', // ✅ Y-axis title
                     padding: { top: 5, bottom: 5 }
                 }
             },
@@ -292,18 +294,19 @@ const BarChart = ({
                 ticks: {
                     padding: 8,
                     font: { size: 11, weight: '500' },
-                    color: isDarkMode ? 'rgba(255, 255, 255, 0.9)' : 'rgba(0, 0, 0, 0.9)'
+                    color: isDarkMode ? '#ffffff' : '#000000' // ✅ X-axis ticks
                 },
                 title: {
                     display: true,
                     text: xFieldLabel || xField || 'X Axis',
                     font: { size: 12, weight: 'bold' },
-                    color: isDarkMode ? 'rgba(255, 255, 255, 0.9)' : 'rgba(0, 0, 0, 0.9)',
+                    color: isDarkMode ? '#ffffff' : '#000000', // ✅ X-axis title
                     padding: { top: 5, bottom: 5 }
                 }
             }
         }
     };
+    
 
     if (!chartData) {
         return (

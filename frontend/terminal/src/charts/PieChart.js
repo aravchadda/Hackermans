@@ -7,7 +7,7 @@ import {
     Title
 } from 'chart.js';
 import { Pie } from 'react-chartjs-2';
-import { useDarkMode } from '../hooks/useDarkMode';
+import { useTheme } from '../ThemeContext';
 
 ChartJS.register(ArcElement, Tooltip, Legend, Title);
 
@@ -21,8 +21,8 @@ const PieChart = ({
     height = 300,
     showLegend = true 
 }) => {
-    // Use custom dark mode hook for reactive theme detection
-    const isDarkMode = useDarkMode();
+    // Use theme context for reactive theme detection
+    const { isDark: isDarkMode } = useTheme();
 
     const chartData = useMemo(() => {
         if (!data || data.length === 0) return null;
@@ -59,10 +59,10 @@ const PieChart = ({
             datasets: [{
                 data: Object.values(counts),
                 backgroundColor: colors.slice(0, Object.keys(counts).length),
-                borderColor: isDarkMode ? '#ffffff' : '#000000',
-                borderWidth: 3,
-                hoverBorderWidth: 4,
-                hoverBorderColor: isDarkMode ? '#ffffff' : '#000000',
+                borderColor: 'transparent',
+                borderWidth: 0,
+                hoverBorderWidth: 0,
+                hoverBorderColor: 'transparent',
                 hoverOffset: 8,
             }]
         };

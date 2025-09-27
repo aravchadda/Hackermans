@@ -8,7 +8,7 @@ import {
     Legend,
 } from 'chart.js';
 import { Bar } from 'react-chartjs-2';
-import { useDarkMode } from '../hooks/useDarkMode';
+import { useTheme } from '../ThemeContext';
 
 ChartJS.register(CategoryScale, LinearScale, Title, Tooltip, Legend);
 
@@ -28,7 +28,7 @@ const HeatmapChart = ({
     isMultiValue = false // Backend indicates multi-value data
 }) => {
     // Use custom dark mode hook for reactive theme detection
-    const isDarkMode = useDarkMode();
+    const { isDark: isDarkMode } = useTheme();
 
     const chartData = useMemo(() => {
         console.log('🔥 HeatmapChart - Received data:', { 

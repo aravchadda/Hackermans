@@ -13,7 +13,7 @@ import {
 } from 'chart.js';
 import 'chartjs-adapter-date-fns';
 import { Line } from 'react-chartjs-2';
-import { useDarkMode } from '../hooks/useDarkMode';
+import { useTheme } from '../ThemeContext';
 
 ChartJS.register(CategoryScale, LinearScale, TimeScale, PointElement, LineElement, Title, Tooltip, Legend, Filler);
 
@@ -33,8 +33,8 @@ const LineChart = ({
     multiValue = false, // Enable multi-valued mode
     isMultiValue = false // Backend indicates multi-value data
 }) => {
-    // Use custom dark mode hook for reactive theme detection
-    const isDarkMode = useDarkMode();
+    // Use theme context for reactive theme detection
+    const { isDark: isDarkMode } = useTheme();
 
     const chartData = useMemo(() => {
         console.log('📈 LineChart - Received data:', { 

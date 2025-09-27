@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import DashboardHeader from './components/DashboardHeader';
 import ChartSidebar from './components/ChartSidebar';
 import DashboardCanvas from './components/DashboardCanvas';
@@ -8,6 +8,7 @@ import AnalyticsDashboard from './AnalyticsDashboard';
 const CreativeDashboard = ({ mode: initialMode = "view", userRole = "operator" }) => {
   const [mode, setMode] = useState(initialMode);
   const [showChat, setShowChat] = useState(true);
+  const dashboardCanvasRef = useRef(null);
 
   const handleCreateChart = (chartConfig) => {
     // This will be passed to DashboardCanvas to create the chart
@@ -42,6 +43,12 @@ const CreativeDashboard = ({ mode: initialMode = "view", userRole = "operator" }
     }
   };
 
+  const handleClearScreen = () => {
+    if (dashboardCanvasRef.current && dashboardCanvasRef.current.clearLayout) {
+      dashboardCanvasRef.current.clearLayout();
+    }
+  };
+
   // Handle analytics mode with special styling
   if (mode === "analytics") {
     return (
@@ -52,6 +59,7 @@ const CreativeDashboard = ({ mode: initialMode = "view", userRole = "operator" }
           showChat={showChat}
           onToggleChat={() => setShowChat(!showChat)}
           userRole={userRole}
+          onClearScreen={handleClearScreen}
         />
         <div className="flex-1 flex min-h-0">
           <AnalyticsDashboard />
@@ -68,10 +76,12 @@ const CreativeDashboard = ({ mode: initialMode = "view", userRole = "operator" }
         showChat={showChat}
         onToggleChat={() => setShowChat(!showChat)}
         userRole={userRole}
+        onClearScreen={handleClearScreen}
       />
       <div className="flex-1 flex min-h-0">
         <ChartSidebar isVisible={mode === "design"} />
         <DashboardCanvas 
+          ref={dashboardCanvasRef}
           mode={mode} 
           showChat={showChat}
           onCreateChart={handleCreateChart} 

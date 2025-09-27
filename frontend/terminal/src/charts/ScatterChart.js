@@ -9,7 +9,7 @@ import {
     Legend
 } from 'chart.js';
 import { Scatter } from 'react-chartjs-2';
-import { useDarkMode } from '../hooks/useDarkMode';
+import { useTheme } from '../ThemeContext';
 
 ChartJS.register(LinearScale, PointElement, LineElement, Title, Tooltip, Legend);
 
@@ -28,8 +28,8 @@ const ScatterChart = ({
     multiValue = false, // Enable multi-valued mode
     isMultiValue = false // Backend indicates multi-value data
 }) => {
-    // Use custom dark mode hook for reactive theme detection
-    const isDarkMode = useDarkMode();
+    // Use theme context for reactive theme detection
+    const { isDark: isDarkMode } = useTheme();
 
     const chartData = useMemo(() => {
         console.log('📊 ScatterChart - Received data:', { 
@@ -113,14 +113,14 @@ const ScatterChart = ({
                     label: fieldLabel,
                     data: points,
                     backgroundColor: scatterColors[index % scatterColors.length],
-                    borderColor: borderColors[index % borderColors.length],
+                    borderColor: 'transparent',
                     pointRadius: 7,
                     pointHoverRadius: 9,
-                    pointBorderWidth: 2,
-                    pointBorderColor: isDarkMode ? '#ffffff' : '#000000',
+                    pointBorderWidth: 0,
+                    pointBorderColor: 'transparent',
                     hoverBackgroundColor: scatterColors[index % scatterColors.length],
-                    hoverBorderColor: borderColors[index % borderColors.length],
-                    hoverBorderWidth: 3,
+                    hoverBorderColor: 'transparent',
+                    hoverBorderWidth: 0,
                 });
             });
 
@@ -146,17 +146,7 @@ const ScatterChart = ({
         plugins: {
             tooltip: {
                 enabled: false
-            }
-        },
-        layout: {
-            padding: {
-                top: 5,
-                bottom: 5,
-                left: 5,
-                right: 5
-            }
-        },
-        plugins: {
+            },
             title: {
                 display: !!title,
                 text: title,
@@ -173,6 +163,14 @@ const ScatterChart = ({
                     pointStyle: 'circle',
                     color: isDarkMode ? 'rgba(255, 255, 255, 0.9)' : 'rgba(0, 0, 0, 0.9)'
                 }
+            }
+        },
+        layout: {
+            padding: {
+                top: 5,
+                bottom: 5,
+                left: 5,
+                right: 5
             }
         },
         scales: {
