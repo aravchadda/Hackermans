@@ -1,6 +1,6 @@
 import React from 'react';
 
-const DashboardHeader = ({ mode, onModeChange, showChat, onToggleChat, userRole = 'admin', onClearScreen }) => {
+const DashboardHeader = ({ mode, onModeChange, showChat, onToggleChat, userRole = 'admin', onClearScreen, onImportCSV }) => {
   return (
     <header className="h-16 bg-white dark:bg-slate-800 border-b border-slate-200 dark:border-slate-700 flex items-center justify-between px-6 shadow-sm">
       <div className="flex items-center gap-4">
@@ -85,6 +85,20 @@ const DashboardHeader = ({ mode, onModeChange, showChat, onToggleChat, userRole 
           </svg>
           <span className="relative z-10">Analytics</span>
         </button>
+        
+        {/* Import CSV Button */}
+        {mode === "design" && (
+          <button
+            onClick={onImportCSV}
+            className="h-8 px-3 text-sm font-medium border border-green-200 dark:border-green-600 rounded-md hover:bg-green-50 dark:hover:bg-green-900/20 transition-all duration-200 flex items-center gap-1.5 text-green-700 dark:text-green-300 hover:text-green-800 dark:hover:text-green-200"
+            title="Import CSV file to update database"
+          >
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
+            </svg>
+            Import CSV
+          </button>
+        )}
         
         {/* Clear Screen Button */}
         {mode === "design" && (

@@ -4,10 +4,12 @@ import ChartSidebar from './components/ChartSidebar';
 import DashboardCanvas from './components/DashboardCanvas';
 import ChatBox from './components/ChatBox';
 import AnalyticsDashboard from './AnalyticsDashboard';
+import CSVImportModal from './components/CSVImportModal';
 
 const CreativeDashboard = ({ mode: initialMode = "view", userRole = "operator" }) => {
   const [mode, setMode] = useState(initialMode);
   const [showChat, setShowChat] = useState(true);
+  const [showCSVImport, setShowCSVImport] = useState(false);
   const dashboardCanvasRef = useRef(null);
 
   const handleCreateChart = (chartConfig) => {
@@ -49,6 +51,15 @@ const CreativeDashboard = ({ mode: initialMode = "view", userRole = "operator" }
     }
   };
 
+  const handleImportCSV = () => {
+    setShowCSVImport(true);
+  };
+
+  const handleCSVImportSuccess = (result) => {
+    console.log('CSV import successful:', result);
+    // Optionally refresh data or show notification
+  };
+
   // Handle analytics mode with special styling
   if (mode === "analytics") {
     return (
@@ -60,6 +71,7 @@ const CreativeDashboard = ({ mode: initialMode = "view", userRole = "operator" }
           onToggleChat={() => setShowChat(!showChat)}
           userRole={userRole}
           onClearScreen={handleClearScreen}
+          onImportCSV={handleImportCSV}
         />
         <div className="flex-1 flex min-h-0">
           <AnalyticsDashboard />
@@ -77,6 +89,7 @@ const CreativeDashboard = ({ mode: initialMode = "view", userRole = "operator" }
         onToggleChat={() => setShowChat(!showChat)}
         userRole={userRole}
         onClearScreen={handleClearScreen}
+        onImportCSV={handleImportCSV}
       />
       <div className="flex-1 flex min-h-0">
         <ChartSidebar isVisible={mode === "design"} />
@@ -96,6 +109,13 @@ const CreativeDashboard = ({ mode: initialMode = "view", userRole = "operator" }
           onUpdateChart={handleUpdateChart}
         />
       </div>
+      
+      {/* CSV Import Modal */}
+      <CSVImportModal 
+        isOpen={showCSVImport}
+        onClose={() => setShowCSVImport(false)}
+        onImport={handleCSVImportSuccess}
+      />
     </div>
   );
 };
