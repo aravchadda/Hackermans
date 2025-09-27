@@ -34,14 +34,6 @@ const AnalyticsDashboard = () => {
       description: "Deep analysis of delay patterns and bottleneck identification",
       color: "bg-black",
       content: "Comprehensive delay analysis framework that identifies bottlenecks, analyzes delay patterns, and provides actionable insights for process optimization and efficiency improvements."
-    },
-    {
-      id: 4,
-      title: "",
-      subtitle: "",
-      description: "",
-      color: "bg-black",
-      content: "Reserved for future analytics module expansion."
     }
   ];
 
