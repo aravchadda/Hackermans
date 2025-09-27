@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 
-const AnomalyDetectionDisplay = () => {
+const AnomalyDetectionDisplay = ({ onClose }) => {
   const [anomalyData, setAnomalyData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [selectedView, setSelectedView] = useState('summary');
@@ -68,26 +68,40 @@ const AnomalyDetectionDisplay = () => {
   };
 
   return (
-    <div className="h-full bg-stone-300 flex flex-col overflow-hidden">
+    <div className="h-full bg-white dark:bg-slate-800 flex flex-col">
       {/* Header */}
-      <div className="bg-black border-b-2 border-red-500 p-6">
+      <div className="p-4 border-b border-slate-200 dark:border-slate-700">
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-3xl font-black text-white mb-2">ANOMALY DETECTION</h1>
-            <p className="text-white/80 text-lg">Advanced pattern recognition and outlier identification</p>
+            <h2 className="text-xl font-bold text-slate-900 dark:text-slate-100">
+              Anomaly Detection Analysis
+            </h2>
+            <p className="text-slate-600 dark:text-slate-400 text-sm">
+              Advanced pattern recognition and outlier identification
+            </p>
           </div>
           <div className="flex items-center gap-4">
-            <div className="text-right">
-              <p className="text-white/60 text-sm">Last Updated</p>
-              <p className="text-white text-lg font-medium">{summary.detection_timestamp}</p>
+            <div className="flex items-center gap-2">
+              <div className="w-3 h-3 bg-red-500 rounded-full animate-pulse"></div>
+              <span className="text-sm font-medium text-slate-700 dark:text-slate-300">Live Detection</span>
             </div>
-            <div className="w-3 h-3 bg-red-500 rounded-full animate-pulse"></div>
+            {onClose && (
+              <button
+                onClick={onClose}
+                className="flex items-center gap-2 px-4 py-2 bg-slate-100 dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded-lg text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-600 transition-all duration-200"
+              >
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+                Close
+              </button>
+            )}
           </div>
         </div>
       </div>
 
       {/* Navigation Tabs */}
-      <div className="bg-black border-b border-red-500">
+      <div className="border-b border-slate-200 dark:border-slate-700">
         <div className="flex">
           {[
             { id: 'summary', label: 'Summary' },
@@ -99,8 +113,8 @@ const AnomalyDetectionDisplay = () => {
               onClick={() => setSelectedView(tab.id)}
               className={`px-6 py-4 text-sm font-medium transition-all duration-200 ${
                 selectedView === tab.id
-                  ? 'bg-red-500 text-white border-b-2 border-white'
-                  : 'text-white/70 hover:text-white hover:bg-red-500/20'
+                  ? 'bg-slate-100 dark:bg-slate-700 text-slate-900 dark:text-slate-100 border-b-2 border-blue-500'
+                  : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100 hover:bg-slate-50 dark:hover:bg-slate-800'
               }`}
             >
               {tab.label}
@@ -110,7 +124,7 @@ const AnomalyDetectionDisplay = () => {
       </div>
 
       {/* Content Area */}
-      <div className="flex-1 overflow-auto p-6">
+      <div className="flex-1 overflow-auto p-6 bg-slate-50 dark:bg-slate-900">
         {selectedView === 'summary' && (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
             {/* Key Metrics */}

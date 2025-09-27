@@ -1,5 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import AnomalyDetectionDisplay from './components/AnomalyDetectionDisplay';
+import PredictiveForecastingDisplay from './components/PredictiveForecastingDisplay';
+import DelayAnalysisDisplay from './components/DelayAnalysisDisplay';
 import AnalyticsChatbot from './components/AnalyticsChatbot';
 
 const AnalyticsDashboard = () => {
@@ -32,14 +34,6 @@ const AnalyticsDashboard = () => {
       description: "Deep analysis of delay patterns and bottleneck identification",
       color: "bg-black",
       content: "Comprehensive delay analysis framework that identifies bottlenecks, analyzes delay patterns, and provides actionable insights for process optimization and efficiency improvements."
-    },
-    {
-      id: 4,
-      title: "",
-      subtitle: "",
-      description: "",
-      color: "bg-black",
-      content: "Reserved for future analytics module expansion."
     }
   ];
 
@@ -83,13 +77,23 @@ const AnalyticsDashboard = () => {
         <div className="w-1/2 h-full flex flex-col p-4" style={{ height: 'calc(100vh - 64px)' }}>
           <div className="h-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl flex flex-col shadow-sm" style={{ height: 'calc(100vh - 96px)' }}>
             {expandedBox ? (
-              // Popup Overlay
-              <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-8">
-                <div className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl w-11/12 h-5/6 flex flex-col animate-in fade-in duration-500 shadow-xl">
+              // Fullscreen Popup Overlay with gaps
+              <div className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-8">
+                <div className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl w-full h-full flex flex-col animate-in fade-in duration-500 shadow-2xl">
                   {expandedBox === 1 ? (
                     // Anomaly Detection Display
                     <div className="h-full">
-                      <AnomalyDetectionDisplay />
+                      <AnomalyDetectionDisplay onClose={() => setExpandedBox(null)} />
+                    </div>
+                  ) : expandedBox === 2 ? (
+                    // Predictive Forecasting Display
+                    <div className="h-full">
+                      <PredictiveForecastingDisplay onClose={() => setExpandedBox(null)} />
+                    </div>
+                  ) : expandedBox === 3 ? (
+                    // Delay Analysis Display
+                    <div className="h-full">
+                      <DelayAnalysisDisplay onClose={() => setExpandedBox(null)} />
                     </div>
                   ) : (
                     // Default expanded view for other modules
