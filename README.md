@@ -1,7 +1,7 @@
-Arav Chadda aravchadda@gmail.com 
-Suprotiv Moitra suprotiv.2003@gmail.com
-Devansh Desai devanshvd237@gmail.com
-Sourav S Gaikwad souravgaikwad581@gmail.com
+- Arav Chadda aravchadda@gmail.com 
+- Suprotiv Moitra suprotiv.2003@gmail.com
+- Devansh Desai devanshvd237@gmail.com
+- Sourav S Gaikwad souravgaikwad581@gmail.com
 
 # Hackermans - Terminal Analytics Dashboard
 
