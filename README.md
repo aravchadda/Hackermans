@@ -4,14 +4,14 @@
 
 A comprehensive terminal analytics system with AI-powered insights, predictive forecasting, anomaly detection, and natural language chart generation. Built with React frontend, Node.js backend, and Flask AI services.
 
-## 🚀 Contributors 
+## Contributors 
 
 - Arav Chadda aravchadda@gmail.com 
 - Suprotiv Moitra suprotiv.2003@gmail.com
 - Devansh Desai devanshvd237@gmail.com
 - Sourav S Gaikwad souravgaikwad581@gmail.com
 
-## 🚀 Features
+## Features
 
 - **AI-Powered Analytics**: Natural language query processing with Ollama LLM
 - **Predictive Forecasting**: Time series analysis and trend prediction
@@ -24,7 +24,7 @@ A comprehensive terminal analytics system with AI-powered insights, predictive f
 - **Comprehensive Reporting**: Delay analysis, throughput analysis, and performance metrics
 - **High-Performance Database**: DuckDB integration for 10-100x faster analytical queries compared to traditional databases
 
-## 🏗️ System Architecture
+## System Architecture
 
 ```
 React Frontend (Port 3000) ← Chart.js for flexible visualizations
@@ -36,7 +36,7 @@ Flask AI Service (Port 5000) ← Ollama LLM (Port 11434)
 DuckDB Database (hackermans.db) ← 10-100x faster than traditional DBs
 ```
 
-## 📦 Quick Start
+## Quick Start
 
 ### Prerequisites
 
@@ -115,7 +115,7 @@ DuckDB Database (hackermans.db) ← 10-100x faster than traditional DBs
    - Backend API: http://localhost:3001
    - Flask AI Service: http://localhost:5000
 
-## 🎯 Usage Examples
+##  Usage Examples
 
 ### Terminal Analytics Features
 
@@ -198,7 +198,7 @@ OLLAMA_URL = "http://localhost:11434"
 MODEL_NAME = "microsoft/phi-3.5-mini"
 ```
 
-## 🏛️ Architecture Details
+## Architecture Details
 
 ### Frontend (React)
 - **Dashboard Interface**: Interactive analytics dashboard
@@ -228,7 +228,7 @@ MODEL_NAME = "microsoft/phi-3.5-mini"
 5. **Chart Generation**: AI generates chart specifications for real-time visualization
 6. **Live Visualization**: React frontend renders interactive charts with Chart.js, querying data live every time
 
-## 📊 API Reference
+## API Reference
 
 ### Node.js Backend Endpoints
 
@@ -396,7 +396,7 @@ curl http://localhost:5000/health
 curl http://localhost:3001/api/data
 ```
 
-## 📈 Performance
+## Performance
 
 ### System Requirements
 
@@ -423,7 +423,7 @@ curl http://localhost:3001/api/data
 5. **Use production-ready models** for better performance
 6. **Chart.js optimization**: Leverage Chart.js's flexibility for responsive and interactive visualizations
 
-## 🚀 Quick Start Summary
+## Quick Start Summary
 
 **To run the project, you need to start all 4 services:**
 
@@ -438,7 +438,7 @@ curl http://localhost:3001/api/data
 - Flask AI: http://localhost:5000
 - Ollama: http://localhost:11434
 
-## 🤝 Contributing
+## Contributing
 
 1. Fork the repository
 2. Create a feature branch
@@ -449,7 +449,7 @@ curl http://localhost:3001/api/data
 
 MIT License - see LICENSE file for details.
 
-## 🆘 Support
+## Support
 
 - **Issues**: Report bugs and feature requests
 - **Documentation**: Check this README for setup instructions
