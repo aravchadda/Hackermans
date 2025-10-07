@@ -1,3 +1,8 @@
+Arav Chadda aravchadda@gmail.com 
+Suprotiv Moitra suprotiv.2003@gmail.com
+Devansh Desai devanshvd237@gmail.com
+Sourav S Gaikwad souravgaikwad581@gmail.com
+
 # Hackermans - Terminal Analytics Dashboard
 
 A comprehensive terminal analytics system with AI-powered insights, predictive forecasting, anomaly detection, and natural language chart generation. Built with React frontend, Node.js backend, and Flask AI services.
@@ -447,5 +452,3 @@ MIT License - see LICENSE file for details.
 - **Troubleshooting**: See troubleshooting section above
 
 ---
-
-**Built with ❤️ for terminal analytics and AI-powered insights**
