@@ -4,6 +4,8 @@
 
 A comprehensive terminal analytics system with AI-powered insights, predictive forecasting, anomaly detection, and natural language chart generation. Built with React frontend, Node.js backend, and Flask AI services.
 
+## 🚀 Contributors 
+
 - Arav Chadda aravchadda@gmail.com 
 - Suprotiv Moitra suprotiv.2003@gmail.com
 - Devansh Desai devanshvd237@gmail.com
