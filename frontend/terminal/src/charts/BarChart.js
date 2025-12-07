@@ -294,7 +294,11 @@ const BarChart = ({
                 ticks: {
                     padding: 8,
                     font: { size: 11, weight: '500' },
-                    color: isDarkMode ? '#ffffff' : '#000000' // ✅ X-axis ticks
+                    color: isDarkMode ? '#ffffff' : '#000000', // ✅ X-axis ticks
+                    autoSkip: false,
+                    maxTicksLimit: 10000,
+                    maxRotation: 0,
+                    minRotation: 0
                 },
                 title: {
                     display: true,

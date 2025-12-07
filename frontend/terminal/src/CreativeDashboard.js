@@ -5,11 +5,13 @@ import DashboardCanvas from './components/DashboardCanvas';
 import ChatBox from './components/ChatBox';
 import AnalyticsDashboard from './AnalyticsDashboard';
 import CSVImportModal from './components/CSVImportModal';
+import ViewManagementModal from './components/ViewManagementModal';
 
 const CreativeDashboard = ({ mode: initialMode = "view", userRole = "operator" }) => {
   const [mode, setMode] = useState(initialMode);
   const [showChat, setShowChat] = useState(true);
   const [showCSVImport, setShowCSVImport] = useState(false);
+  const [showViewManagement, setShowViewManagement] = useState(false);
   const dashboardCanvasRef = useRef(null);
 
   const handleCreateChart = (chartConfig) => {
@@ -60,6 +62,19 @@ const CreativeDashboard = ({ mode: initialMode = "view", userRole = "operator" }
     // Optionally refresh data or show notification
   };
 
+  const handleManageViews = () => {
+    setShowViewManagement(true);
+  };
+
+  const handleViewCreated = (view) => {
+    console.log('View created successfully:', view);
+    // Optionally refresh schema or show notification
+    // You might want to trigger a schema refresh in DashboardCanvas
+    if (dashboardCanvasRef.current && dashboardCanvasRef.current.refreshSchema) {
+      dashboardCanvasRef.current.refreshSchema();
+    }
+  };
+
   // Handle analytics mode with special styling
   if (mode === "analytics") {
     return (
@@ -72,6 +87,7 @@ const CreativeDashboard = ({ mode: initialMode = "view", userRole = "operator" }
           userRole={userRole}
           onClearScreen={handleClearScreen}
           onImportCSV={handleImportCSV}
+          onManageViews={handleManageViews}
         />
         <div className="flex-1 flex min-h-0">
           <AnalyticsDashboard />
@@ -90,6 +106,7 @@ const CreativeDashboard = ({ mode: initialMode = "view", userRole = "operator" }
         userRole={userRole}
         onClearScreen={handleClearScreen}
         onImportCSV={handleImportCSV}
+        onManageViews={handleManageViews}
       />
       <div className="flex-1 flex min-h-0">
         <ChartSidebar isVisible={mode === "design"} />
@@ -115,6 +132,13 @@ const CreativeDashboard = ({ mode: initialMode = "view", userRole = "operator" }
         isOpen={showCSVImport}
         onClose={() => setShowCSVImport(false)}
         onImport={handleCSVImportSuccess}
+      />
+      
+      {/* View Management Modal */}
+      <ViewManagementModal 
+        isOpen={showViewManagement}
+        onClose={() => setShowViewManagement(false)}
+        onViewCreated={handleViewCreated}
       />
     </div>
   );

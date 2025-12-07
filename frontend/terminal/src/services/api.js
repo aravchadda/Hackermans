@@ -35,12 +35,41 @@ apiClient.interceptors.response.use(
 );
 
 export const apiService = {
+  // Get database schema (all tables and columns)
+  async getSchema() {
+    try {
+      const response = await apiClient.get('/schema');
+      if (response.data && response.data.success) {
+        return response.data;
+      }
+      return { schema: {}, tables: [] };
+    } catch (error) {
+      console.error('Error fetching schema:', error);
+      return { schema: {}, tables: [] };
+    }
+  },
+
+  // Get columns for a specific table
+  async getTableColumns(tableName) {
+    try {
+      const response = await apiClient.get(`/schema/${tableName}`);
+      if (response.data && response.data.success) {
+        return response.data.columns;
+      }
+      return [];
+    } catch (error) {
+      console.error(`Error fetching columns for table ${tableName}:`, error);
+      return [];
+    }
+  },
+
   // Get available columns for chart axes
 
-  // Get chart data based on x and y axes
-  async getChartData(xAxis, yAxis, chartType, limit = 1000, filters = {}) {
+  // Get chart data based on x and y axes - now supports any table
+  async getChartData(xAxis, yAxis, chartType, limit = 1000, filters = {}, tableName = 'Shipment') {
     try {
       const params = {
+        tableName,
         xAxis,
         yAxis,
         limit
@@ -52,7 +81,7 @@ export const apiService = {
       if (filters.yMin !== undefined && filters.yMin !== '') params.yMin = filters.yMin;
       if (filters.yMax !== undefined && filters.yMax !== '') params.yMax = filters.yMax;
       
-      const response = await apiClient.get('/shipments/chart-data', { params });
+      const response = await apiClient.get('/chart-data', { params });
       return response.data.success ? response.data : { data: [], isMultiValue: false, yAxes: [] };
     } catch (error) {
       console.error('Error fetching chart data:', error);
@@ -60,10 +89,11 @@ export const apiService = {
     }
   },
 
-  // Get chart data with multiple y-axis fields
-  async getMultiValueChartData(xAxis, yAxes, chartType, limit = 1000, filters = {}) {
+  // Get chart data with multiple y-axis fields - now supports any table
+  async getMultiValueChartData(xAxis, yAxes, chartType, limit = 1000, filters = {}, tableName = 'Shipment') {
     try {
       const params = {
+        tableName,
         xAxis,
         yAxes: Array.isArray(yAxes) ? yAxes.join(',') : yAxes,
         limit
@@ -75,7 +105,7 @@ export const apiService = {
       if (filters.yMin !== undefined && filters.yMin !== '') params.yMin = filters.yMin;
       if (filters.yMax !== undefined && filters.yMax !== '') params.yMax = filters.yMax;
       
-      const response = await apiClient.get('/shipments/chart-data', { params });
+      const response = await apiClient.get('/chart-data', { params });
       return response.data.success ? response.data : { data: [], isMultiValue: false, yAxes: [] };
     } catch (error) {
       console.error('Error fetching multi-value chart data:', error);
@@ -235,6 +265,57 @@ export const apiService = {
     } catch (error) {
       console.error('💥 Error executing insights query:', error);
       console.error('Error details:', error.response?.data);
+      throw error;
+    }
+  },
+
+  // Views Management API
+  async getViews() {
+    try {
+      const response = await apiClient.get('/views');
+      return response.data.success ? response.data.views : [];
+    } catch (error) {
+      console.error('Error fetching views:', error);
+      return [];
+    }
+  },
+
+  async getView(viewName) {
+    try {
+      const response = await apiClient.get(`/views/${viewName}`);
+      return response.data.success ? response.data.view : null;
+    } catch (error) {
+      console.error('Error fetching view:', error);
+      throw error;
+    }
+  },
+
+  async createView(viewData) {
+    try {
+      const response = await apiClient.post('/views', viewData);
+      return response.data;
+    } catch (error) {
+      console.error('Error creating view:', error);
+      throw error;
+    }
+  },
+
+  async updateView(viewName, viewData) {
+    try {
+      const response = await apiClient.put(`/views/${viewName}`, viewData);
+      return response.data;
+    } catch (error) {
+      console.error('Error updating view:', error);
+      throw error;
+    }
+  },
+
+  async deleteView(viewName) {
+    try {
+      const response = await apiClient.delete(`/views/${viewName}`);
+      return response.data;
+    } catch (error) {
+      console.error('Error deleting view:', error);
       throw error;
     }
   }

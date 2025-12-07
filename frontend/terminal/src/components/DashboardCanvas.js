@@ -1,7 +1,6 @@
 import React, { useState, useEffect, forwardRef, useImperativeHandle } from 'react';
 import { BarChart, LineChart, PieChart, ScatterChart, HistogramChart, AreaChart, HeatmapChart } from '../charts';
 import { apiService } from '../services/api';
-import { shipmentFields } from '../sampleData';
 import layoutService from '../services/layoutService';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { 
@@ -68,6 +67,52 @@ const DashboardCanvas = forwardRef(({ mode, showChat, onCreateChart, onDeleteCha
   const [chartData, setChartData] = useState({});
   const [loading, setLoading] = useState(false);
   const [rangeFilters, setRangeFilters] = useState({});
+  const [availableColumns, setAvailableColumns] = useState([]);
+  const [selectedTable, setSelectedTable] = useState('shipments');
+  const [schema, setSchema] = useState({});
+  const [tables, setTables] = useState([]);
+
+  // Load database schema on mount
+  useEffect(() => {
+    const loadSchema = async () => {
+      try {
+        console.log('Loading database schema...');
+        const schemaData = await apiService.getSchema();
+        if (schemaData && schemaData.schema) {
+          setSchema(schemaData.schema);
+          setTables(schemaData.tables || []);
+          
+          // Set default table - prefer Shipment (capital S) if it exists, otherwise use first available
+          if (schemaData.schema.Shipment) {
+            setSelectedTable('Shipment');
+            setAvailableColumns(schemaData.schema.Shipment.columns);
+          } else if (schemaData.schema.shipments) {
+            setSelectedTable('shipments');
+            setAvailableColumns(schemaData.schema.shipments.columns);
+          } else if (schemaData.tables && schemaData.tables.length > 0) {
+            // Use first available table
+            const firstTable = schemaData.tables[0];
+            setSelectedTable(firstTable);
+            setAvailableColumns(schemaData.schema[firstTable]?.columns || []);
+          }
+          console.log('Schema loaded:', schemaData);
+        }
+      } catch (error) {
+        console.error('Error loading schema:', error);
+        // Fallback to empty array
+        setAvailableColumns([]);
+      }
+    };
+    
+    loadSchema();
+  }, []);
+
+  // Update columns when table changes
+  useEffect(() => {
+    if (schema[selectedTable]) {
+      setAvailableColumns(schema[selectedTable].columns || []);
+    }
+  }, [selectedTable, schema]);
 
   // Debug: Log when items array changes
   useEffect(() => {
@@ -318,15 +363,14 @@ const DashboardCanvas = forwardRef(({ mode, showChat, onCreateChart, onDeleteCha
     }
   }, [items, mode]);
 
-  // Use shipment fields directly from frontend
-  const availableColumns = shipmentFields;
+  // availableColumns is now loaded from database schema dynamically
 
 
-  // Fetch chart data from backend
+  // Fetch chart data from backend with table name
   const fetchChartData = async (xAxis, yAxis, chartType, filters = {}) => {
     try {
       setLoading(true);
-      const data = await apiService.getChartData(xAxis, yAxis, chartType, 1000, filters);
+      const data = await apiService.getChartData(xAxis, yAxis, chartType, 1000, filters, selectedTable);
       return data;
     } catch (error) {
       console.error('Error fetching chart data:', error);
@@ -336,11 +380,11 @@ const DashboardCanvas = forwardRef(({ mode, showChat, onCreateChart, onDeleteCha
     }
   };
 
-  // Fetch multi-value chart data from backend
+  // Fetch multi-value chart data from backend with table name
   const fetchMultiValueChartData = async (xAxis, yAxes, chartType, filters = {}) => {
     try {
       setLoading(true);
-      const data = await apiService.getMultiValueChartData(xAxis, yAxes, chartType, 1000, filters);
+      const data = await apiService.getMultiValueChartData(xAxis, yAxes, chartType, 1000, filters, selectedTable);
       return data;
     } catch (error) {
       console.error('Error fetching multi-value chart data:', error);
@@ -1022,6 +1066,39 @@ const DashboardCanvas = forwardRef(({ mode, showChat, onCreateChart, onDeleteCha
                   )}
                 </div>
 
+                {/* X-axis Range Filters */}
+                {item.config.xField && (
+                  <div className="space-y-1">
+                    <label className="flex text-sm font-medium text-slate-700 dark:text-slate-300 mb-2 items-center">
+                      <FontAwesomeIcon icon={faChartLine} className="w-4 h-4 mr-2 text-primary" />
+                      X-Axis Range
+                    </label>
+                    <div className="grid grid-cols-2 gap-2">
+                      <div>
+                        <label className="block text-xs text-slate-500 dark:text-slate-400 mb-1">Min</label>
+                        <input
+                          type={item.config.xField === 'ScheduledDate' ? 'date' : 'number'}
+                          value={item.config.xMin || ''}
+                          onChange={(e) => handleItemConfig(item.id, { xMin: e.target.value })}
+                          className="w-full px-3 py-2 text-sm border border-slate-200 dark:border-slate-600 rounded-md bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100"
+                          placeholder={item.config.xField === 'ScheduledDate' ? 'YYYY-MM-DD' : 'Min value'}
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-xs text-slate-500 dark:text-slate-400 mb-1">Max</label>
+                        <input
+                          type={item.config.xField === 'ScheduledDate' ? 'date' : 'number'}
+                          value={item.config.xMax || ''}
+                          onChange={(e) => handleItemConfig(item.id, { xMax: e.target.value })}
+                          className="w-full px-3 py-2 text-sm border border-slate-200 dark:border-slate-600 rounded-md bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100"
+                          placeholder={item.config.xField === 'ScheduledDate' ? 'YYYY-MM-DD' : 'Max value'}
+                        />
+                      </div>
+                    </div>
+                    <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">Only data within this range will be shown.</p>
+                  </div>
+                )}
+
                 <div className="space-y-1">
                   <label className="flex text-sm font-medium text-slate-700 dark:text-slate-300 mb-2 items-center">
                     <FontAwesomeIcon icon={faChartBar} className="w-4 h-4 mr-2 text-primary" />
@@ -1145,9 +1222,10 @@ const DashboardCanvas = forwardRef(({ mode, showChat, onCreateChart, onDeleteCha
                     try {
                       console.log(`Fetching updated data for ${item.id}: xField=${xField}, yField=${yField}, yFields=${yFields}, type=${type}`);
                       const isMultiValue = yFields && yFields.length > 1;
+                      const filters = { xMin: item.config.xMin, xMax: item.config.xMax };
                       const data = isMultiValue ? 
-                        await apiService.getMultiValueChartData(xField, yFields, type, 1000, {}) :
-                        await apiService.getChartData(xField, yField, type, 1000, {});
+                        await apiService.getMultiValueChartData(xField, yFields, type, 1000, filters, selectedTable) :
+                        await apiService.getChartData(xField, yField, type, 1000, filters, selectedTable);
                       setChartData(prev => ({
                         ...prev,
                         [item.id]: data
@@ -1174,6 +1252,31 @@ const DashboardCanvas = forwardRef(({ mode, showChat, onCreateChart, onDeleteCha
 
   return (
     <main className="flex-1 bg-dashboard-bg overflow-auto min-h-0 pb-8">
+      {/* Table Selector */}
+      {tables.length > 0 && (
+        <div className="sticky top-0 z-10 bg-dashboard-surface border-b border-slate-200 dark:border-slate-700 px-4 py-2 flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <label className="text-sm font-medium text-foreground">Table:</label>
+            <select
+              value={selectedTable}
+              onChange={(e) => {
+                setSelectedTable(e.target.value);
+                // Clear chart data when table changes
+                setChartData({});
+              }}
+              className="px-3 py-1.5 bg-background border border-slate-300 dark:border-slate-600 rounded-md text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary"
+            >
+              {tables.map(table => (
+                <option key={table} value={table}>{table}</option>
+              ))}
+            </select>
+            <span className="text-xs text-muted-foreground">
+              ({availableColumns.length} columns)
+            </span>
+          </div>
+        </div>
+      )}
+      
       <div
         className={`w-full relative transition-smooth ${
           dragOver ? "bg-primary/5 border-2 border-dashed border-primary" : ""

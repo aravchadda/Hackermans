@@ -92,68 +92,85 @@ const LineChart = ({
             'rgba(255, 99, 192, 0.1)',   // Bright Rose
         ];
 
-        // Use unified multi-value approach for both single and multi-value data
+        // Use unified approach: only render multiple lines when explicitly multi-value
         if (data && data.length > 0) {
             console.log('📈 LineChart - Processing data:', { 
                 firstDataItem: data[0],
                 dataLength: data.length 
             });
             
-            // Handle backend data format (y_value_0, y_value_1, etc.)
-            const datasets = [];
-            
-            // Find all y_value_* fields in the first data item
+            // Determine fields present
             const firstItem = data[0];
             const yValueFields = Object.keys(firstItem).filter(key => key.startsWith('y_value_'));
-            console.log('📈 LineChart - Found y_value fields:', yValueFields);
-            console.log('📈 LineChart - First item keys:', Object.keys(firstItem));
-            console.log('📈 LineChart - First item values:', firstItem);
-            
-            yValueFields.forEach((fieldName, index) => {
-                // Log raw data first
-                console.log(`📈 LineChart - Raw data for ${fieldName}:`, data.slice(0, 3).map(item => ({ 
-                    [fieldName]: item[fieldName], 
-                    type: typeof item[fieldName] 
-                })));
-                
-                const values = data.map(item => parseFloat(item[fieldName]) || 0);
-                const fieldLabel = seriesLabels && seriesLabels[index] ? seriesLabels[index] : `Series ${index + 1}`;
-                console.log(`📈 LineChart - Processing backend field ${fieldName}:`, { 
-                    fieldName, 
-                    fieldLabel,
-                    values: values, // Show all values
-                    totalValues: values.length,
-                    sampleValues: values.slice(0, 10) // Show first 10 for debugging
-                });
-
-                datasets.push({
-                    label: fieldLabel,
-                    data: values,
-                    borderColor: lineColors[index % lineColors.length],
-                    backgroundColor: fillArea ? fillColors[index % fillColors.length] : 'transparent',
-                    borderWidth: 3,
-                    pointRadius: 0, // Remove dots for all lines
-                    pointHoverRadius: 0, // Remove hover dots
-                    pointBackgroundColor: 'transparent',
-                    pointBorderColor: 'transparent',
-                    pointBorderWidth: 0,
-                    fill: fillArea,
-                    tension: 0.4, // Smooth curves
-                });
-            });
-
-            // Use x_value for labels
             const labels = data.map(item => item['x_value'] || 'Unknown');
-            console.log('📈 LineChart - Labels:', labels.slice(0, 5));
 
-            const chartData = {
-                labels,
-                datasets
+            // If explicitly multi-value and we truly have multiple series, build multiple datasets
+            if ((multiValue || isMultiValue) && yValueFields.length > 1) {
+                console.log('📈 LineChart - Multi-series mode with fields:', yValueFields);
+                const datasets = yValueFields.map((fieldName, index) => {
+                    const values = data.map(item => parseFloat(item[fieldName]) || 0);
+                    const fieldLabel = seriesLabels && seriesLabels[index] ? seriesLabels[index] : `Series ${index + 1}`;
+                    return {
+                        label: fieldLabel,
+                        data: values,
+                        borderColor: lineColors[index % lineColors.length],
+                        backgroundColor: fillArea ? fillColors[index % fillColors.length] : 'transparent',
+                        borderWidth: 3,
+                        pointRadius: 0,
+                        pointHoverRadius: 0,
+                        pointBackgroundColor: 'transparent',
+                        pointBorderColor: 'transparent',
+                        pointBorderWidth: 0,
+                        fill: fillArea,
+                        tension: 0.4,
+                    };
+                });
+                return { labels, datasets };
+            }
+
+            // Otherwise force single-series: prefer y_value, fallback to y_value_0
+            const valueField = firstItem.hasOwnProperty('y_value') ? 'y_value' : 'y_value_0';
+            const values = data.map(item => parseFloat(item[valueField]) || 0);
+            const dataset = {
+                label: yFieldLabel || yField || 'Series',
+                data: values,
+                borderColor: lineColors[0],
+                backgroundColor: fillArea ? fillColors[0] : 'transparent',
+                borderWidth: 3,
+                pointRadius: 0,
+                pointHoverRadius: 0,
+                pointBackgroundColor: 'transparent',
+                pointBorderColor: 'transparent',
+                pointBorderWidth: 0,
+                fill: fillArea,
+                tension: 0.4,
             };
-            console.log('📈 LineChart - Final chart data:', chartData);
-            return chartData;
+            return { labels, datasets: [dataset] };
         }
     }, [data, xField, yField, yFieldLabel, fillArea, isDarkMode, multiValue, isMultiValue, yFields, seriesLabels]);
+
+    // Derive labels and intelligent axis settings to avoid overlap
+    const xLabels = Array.isArray(data) ? data.map(d => d?.x_value).filter(Boolean) : [];
+    const spanDays = useMemo(() => {
+        if (xLabels.length < 2) return 0;
+        const parse = (s) => new Date(s + 'T00:00:00Z').getTime();
+        const first = parse(xLabels[0]);
+        const last = parse(xLabels[xLabels.length - 1]);
+        return Math.max(0, Math.round((last - first) / 86400000));
+    }, [xLabels]);
+    const timeUnit = useMemo(() => {
+        if (spanDays > 365) return 'month';
+        if (spanDays > 90) return 'week';
+        return 'day';
+    }, [spanDays]);
+    const xMaxTicks = useMemo(() => {
+        const n = xLabels.length;
+        if (n <= 8) return n;
+        if (n <= 20) return 10;
+        if (n <= 60) return 12;
+        if (n <= 180) return 14;
+        return 16;
+    }, [xLabels]);
 
     const options = {
         responsive: true,
@@ -209,12 +226,14 @@ const LineChart = ({
             x: {
                 type: 'time',
                 time: {
-                    parser: 'M/d/yyyy H:mm:ss', // Parser for format like '1/1/2017 15:20:00'
-                    tooltipFormat: 'MMM d, yyyy, h:mm a',
+                    parser: 'yyyy-MM-dd', // backend sends ISO date-only for ScheduledDate
+                    tooltipFormat: 'MMM d, yyyy',
+                    unit: timeUnit,
                     displayFormats: {
-                        day: 'MMM d',
-                        hour: 'MMM d HH:mm',
-                        minute: 'MMM d HH:mm'
+                        day: 'MMM d, yyyy',
+                        week: 'MMM d, yyyy',
+                        month: 'MMM yyyy',
+                        year: 'yyyy'
                     }
                 },
                 grid: { 
@@ -225,7 +244,13 @@ const LineChart = ({
                 ticks: {
                     padding: 8,
                     font: { size: 11, weight: '500' },
-                    color: isDarkMode ? 'rgba(255, 255, 255, 0.9)' : 'rgba(0, 0, 0, 0.9)'
+                    color: isDarkMode ? 'rgba(255, 255, 255, 0.9)' : 'rgba(0, 0, 0, 0.9)',
+                    autoSkip: true,
+                    autoSkipPadding: 16,
+                    maxRotation: 0,
+                    minRotation: 0,
+                    maxTicksLimit: xMaxTicks,
+                    sampleSize: xMaxTicks
                 },
                 title: {
                     display: true,
