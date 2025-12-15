@@ -22,7 +22,7 @@ OLLAMA_URL = "http://localhost:11434"
 MODEL_NAME = "phi3.5:latest"  # Using available model
 
 # System prompt template for the LLM
-SYSTEM_PROMPT_TEMPLATE = """You are a JSON generator for chart/graph operations. Convert natural language requests into valid JSON for chart manipulation.
+SYSTEM_PROMPT_TEMPLATE ="""You are a JSON generator for chart/graph operations. Convert natural language requests into valid JSON for chart manipulation.
 Rules:
 
 ALWAYS return ONLY valid JSON, no explanations or markdown
@@ -88,123 +88,99 @@ Output:
 Remember: Return ONLY the JSON object, nothing else."""
 
 # System prompt for insights SQL query mapping
-INSIGHTS_SYSTEM_PROMPT = """You are a SQL query mapper for bulk liquid terminal analytics. Your job is to map natural language questions to one of the predefined SQL queries.
+INSIGHTS_SYSTEM_PROMPT = f"""
+You are an expert T-SQL Data Analyst managing a bulk liquid terminal database. 
+Your job is to generate accurate, executable Microsoft SQL Server (T-SQL) queries based on natural language questions.
 
-You have access to 6 predefined SQL queries for terminal analytics:
+### Database Schema
+The table named `shipments` contains the following columns:
+{Column_descriptions}
 
-1. DAILY_THROUGHPUT_ANALYSIS - For questions about daily productivity, throughput trends, capacity utilization, peak/low activity periods
-2. BAY_PERFORMANCE_COMPARISON - For questions about bay performance, resource allocation, equipment maintenance, bay comparisons
-3. FLOW_RATE_PERFORMANCE_ANALYSIS - For questions about flow rate optimization, equipment efficiency, technical issues, performance benchmarking
-4. SCHEDULE_ADHERENCE_ANALYSIS - For questions about operational efficiency, scheduling bottlenecks, delays, customer service
-5. PRODUCT_PORTFOLIO_PERFORMANCE - For questions about product mix, profitability, high-volume products, specialty products
-6. OPERATIONAL_TIME_PATTERNS - For questions about operating hours, staffing schedules, seasonal trends, capacity planning
+### Rules
+1. **Dialect:** Use strict T-SQL (MSSQL) syntax.
+2. **Date Handling:** Assume date columns are stored as strings in 'MM/DD/YYYY HH:MM:SS' format unless specified otherwise. Use `TRY_CONVERT` or `CAST` for date operations.
+3. **Format:** Return *only* the SQL query. Do not use Markdown code blocks (```sql). Do not include explanations.
+4. **Logic:** Use appropriate aggregation, `GROUP BY`, and `ORDER BY` clauses to answer the specific question.
 
-ALWAYS return ONLY the query identifier (e.g., "DAILY_THROUGHPUT_ANALYSIS"), no explanations or additional text.
+### Few-Shot Examples
+Refer to these examples to understand how to map business questions to SQL logic:
 
-Examples:
-User: "Show me daily throughput trends"
-Output: DAILY_THROUGHPUT_ANALYSIS
+Input: "Show me daily throughput trends including total shipments and average flow rates."
+Output: 
+SELECT 
+    CAST(ScheduledDate AS DATE) AS operation_date,
+    COUNT(*) AS total_shipments,
+    SUM(GrossQuantity) AS daily_volume,
+    AVG(FlowRate) AS avg_flow_rate,
+    AVG(GrossQuantity) AS avg_shipment_size
+FROM shipments 
+GROUP BY CAST(ScheduledDate AS DATE)
+ORDER BY operation_date;
 
-User: "Which bays are performing best?"
-Output: BAY_PERFORMANCE_COMPARISON
+Input: "Compare the performance of different bays based on volume and flow rate."
+Output: 
+SELECT 
+    BayCode,
+    COUNT(*) AS total_operations,
+    AVG(GrossQuantity) AS avg_volume_per_operation,
+    AVG(FlowRate) AS avg_flow_rate,
+    SUM(GrossQuantity) AS total_volume_handled
+FROM shipments 
+GROUP BY BayCode
+ORDER BY total_volume_handled DESC;
 
-User: "What are the flow rate issues?"
-Output: FLOW_RATE_PERFORMANCE_ANALYSIS
+Input: "Analyze flow rate consistency and variance by product and bay."
+Output: 
+SELECT 
+    BayCode,
+    BaseProductCode,
+    AVG(FlowRate) AS avg_flow_rate,
+    MIN(FlowRate) AS min_flow_rate,
+    MAX(FlowRate) AS max_flow_rate,
+    STDEV(FlowRate) AS flow_rate_variance,
+    COUNT(*) AS operations_count
+FROM shipments 
+GROUP BY BayCode, BaseProductCode
+HAVING COUNT(*) >= 5;
 
-User: "How are we doing with schedule adherence?"
-Output: SCHEDULE_ADHERENCE_ANALYSIS
+Input: "Check schedule adherence to see if we are facing delays."
+Output: 
+SELECT 
+    CAST(ScheduledDate AS DATE) AS scheduled_date,
+    COUNT(*) AS total_shipments,
+    AVG(DATEDIFF(second, ScheduledDate, ExitTime) / 3600.0) AS avg_duration_hours,
+    SUM(CASE WHEN ExitTime > DATEADD(hour, 2, ScheduledDate) THEN 1 ELSE 0 END) AS delayed_operations
+FROM shipments 
+WHERE ExitTime IS NOT NULL
+GROUP BY CAST(ScheduledDate AS DATE)
+ORDER BY scheduled_date;
 
-User: "Which products are most profitable?"
-Output: PRODUCT_PORTFOLIO_PERFORMANCE
+Input: "Which products are performing best in terms of volume and mix?"
+Output: 
+SELECT 
+    BaseProductCode,
+    COUNT(*) AS shipment_frequency,
+    SUM(GrossQuantity) AS total_volume,
+    AVG(GrossQuantity) AS avg_shipment_size,
+    AVG(FlowRate) AS avg_processing_rate,
+    (SUM(GrossQuantity) * 100.0 / SUM(SUM(GrossQuantity)) OVER ()) AS volume_percentage
+FROM shipments 
+GROUP BY BaseProductCode
+ORDER BY total_volume DESC;
 
-User: "What are the peak operating hours?"
-Output: OPERATIONAL_TIME_PATTERNS
+Input: "What are the operational patterns by hour of day and day of week?"
+Output: 
+SELECT 
+    DATEPART(hour, ScheduledDate) AS hour_of_day,
+    DATEPART(weekday, ScheduledDate) AS day_of_week,
+    COUNT(*) AS operation_count,
+    AVG(GrossQuantity) AS avg_volume,
+    AVG(FlowRate) AS avg_flow_rate
+FROM shipments 
+GROUP BY DATEPART(hour, ScheduledDate), DATEPART(weekday, ScheduledDate)
+ORDER BY hour_of_day, day_of_week;
+"""
 
-Remember: Return ONLY the query identifier, nothing else."""
-
-# Predefined SQL queries for insights
-INSIGHTS_SQL_QUERIES = {
-    "DAILY_THROUGHPUT_ANALYSIS": """
-        -- Daily throughput trends
-        SELECT 
-          CAST(STRPTIME(ScheduledDate, '%m/%d/%Y %H:%M:%S') AS DATE) AS operation_date,
-          COUNT(*) AS total_shipments,
-          SUM(GrossQuantity) AS daily_volume,
-          AVG(FlowRate) AS avg_flow_rate,
-          AVG(GrossQuantity) AS avg_shipment_size
-        FROM shipments 
-        GROUP BY operation_date
-        ORDER BY operation_date
-    """,
-    
-    "BAY_PERFORMANCE_COMPARISON": """
-        -- Bay performance comparison
-        SELECT 
-          BayCode,
-          COUNT(*) AS total_operations,
-          AVG(GrossQuantity) AS avg_volume_per_operation,
-          AVG(FlowRate) AS avg_flow_rate,
-          SUM(GrossQuantity) AS total_volume_handled
-        FROM shipments 
-        GROUP BY BayCode
-        ORDER BY total_volume_handled DESC
-    """,
-    
-    "FLOW_RATE_PERFORMANCE_ANALYSIS": """
-        -- Flow rate performance by product and bay
-        SELECT 
-          BayCode,
-          BaseProductCode,
-          AVG(FlowRate) AS avg_flow_rate,
-          MIN(FlowRate) AS min_flow_rate,
-          MAX(FlowRate) AS max_flow_rate,
-          STDDEV_POP(FlowRate) AS flow_rate_variance,
-          COUNT(*) AS operations_count
-        FROM shipments 
-        GROUP BY BayCode, BaseProductCode
-        HAVING COUNT(*) >= 5
-    """,
-    
-    "SCHEDULE_ADHERENCE_ANALYSIS": """
-        -- Schedule vs actual performance analysis
-        SELECT 
-          CAST(STRPTIME(ScheduledDate, '%m/%d/%Y %H:%M:%S') AS DATE) AS scheduled_date,
-          COUNT(*) AS total_shipments,
-          AVG(EXTRACT(epoch FROM (STRPTIME(ExitTime, '%m/%d/%Y %H:%M:%S') - STRPTIME(ScheduledDate, '%m/%d/%Y %H:%M:%S'))) / 3600) AS avg_duration_hours,
-          COUNT(CASE WHEN STRPTIME(ExitTime, '%m/%d/%Y %H:%M:%S') > STRPTIME(ScheduledDate, '%m/%d/%Y %H:%M:%S') + INTERVAL '2 hours' THEN 1 END) AS delayed_operations
-        FROM shipments 
-        WHERE ExitTime IS NOT NULL
-        GROUP BY scheduled_date
-        ORDER BY scheduled_date
-    """,
-    
-    "PRODUCT_PORTFOLIO_PERFORMANCE": """
-        -- Product performance analysis
-        SELECT 
-          BaseProductCode,
-          COUNT(*) AS shipment_frequency,
-          SUM(GrossQuantity) AS total_volume,
-          AVG(GrossQuantity) AS avg_shipment_size,
-          AVG(FlowRate) AS avg_processing_rate,
-          100.0 * SUM(GrossQuantity) / SUM(SUM(GrossQuantity)) OVER () AS volume_percentage
-        FROM shipments 
-        GROUP BY BaseProductCode
-        ORDER BY total_volume DESC
-    """,
-    
-    "OPERATIONAL_TIME_PATTERNS": """
-        -- Hourly, daily, weekly patterns
-        SELECT 
-          EXTRACT(hour FROM STRPTIME(ScheduledDate, '%m/%d/%Y %H:%M:%S')) AS hour_of_day,
-          EXTRACT(dow FROM STRPTIME(ScheduledDate, '%m/%d/%Y %H:%M:%S')) AS day_of_week,
-          COUNT(*) AS operation_count,
-          AVG(GrossQuantity) AS avg_volume,
-          AVG(FlowRate) AS avg_flow_rate
-        FROM shipments 
-        GROUP BY hour_of_day, day_of_week
-        ORDER BY hour_of_day, day_of_week
-    """
-}
 
 
 def call_ollama(prompt, existing_graphs="", model=MODEL_NAME):
@@ -248,13 +224,14 @@ def call_ollama(prompt, existing_graphs="", model=MODEL_NAME):
         logger.error(f"Error calling Ollama: {str(e)}")
         return None
 
-def call_ollama_insights(prompt, model=MODEL_NAME):
+def call_ollama_insights(prompt,Column_descriptions, model=MODEL_NAME):
     """
     Call Ollama API specifically for insights query mapping
     """
     try:
         # Print the request being sent for debugging
-        full_prompt = f"{INSIGHTS_SYSTEM_PROMPT}\n\nUser: {prompt}\nOutput:"
+        system_prompt = f"{INSIGHTS_SYSTEM_PROMPT.format(Column_descriptions=Column_descriptions)}"
+        full_prompt = f"{system_prompt}\n\nUser: {prompt}\nOutput:"
         print("=" * 80)
         print("OLLAMA INSIGHTS REQUEST:")
         print("=" * 80)
@@ -716,7 +693,7 @@ def process_insights_query():
     """
     try:
         data = request.get_json()
-        
+        #get Column_descriptions from database SUPRO
         # Print incoming request for debugging
         print("=" * 80)
         print("INSIGHTS REQUEST:")
@@ -735,7 +712,7 @@ def process_insights_query():
         logger.info(f"Received insights query: {user_query}")
         
         # Call Ollama to map the query to a predefined SQL query
-        llm_response = call_ollama_insights(user_query)
+        llm_response = call_ollama_insights(user_query, Column_descriptions)
         
         # Print raw LLM output for debugging
         print("=" * 80)
@@ -749,37 +726,32 @@ def process_insights_query():
             return jsonify({
                 "error": "Failed to get response from Ollama. Make sure Ollama is running."
             }), 500
+        code_block_pattern = r"```(?:sql|SQL)?\s*(.*?)```"
+        match = re.search(code_block_pattern, llm_response, re.DOTALL)
         
-        # Clean the response to get the query identifier
-        query_identifier = llm_response.strip().upper()
+        if match:
+            query = match.group(1)
+        else:
+            # 2. If no block found, assume the whole text is the query
+            query = llm_response
+
+        # 3. Clean up generic formatting artifacts
+        # Strip whitespace
+        query = query.strip()
         
-        # Validate that the query identifier exists in our predefined queries
-        if query_identifier not in INSIGHTS_SQL_QUERIES:
-            logger.error(f"Invalid query identifier: {query_identifier}")
-            return jsonify({
-                "error": f"Invalid query identifier: {query_identifier}",
-                "available_queries": list(INSIGHTS_SQL_QUERIES.keys()),
-                "raw_response": llm_response
-            }), 400
+        # Remove leading/trailing backticks if they exist (common in inline code formatting)
+        query = query.strip('`')
+        query = query.strip()
         
-        # Get the corresponding SQL query
-        sql_query = INSIGHTS_SQL_QUERIES[query_identifier]
-        
-        # Print final response for debugging
-        print("=" * 80)
-        print("FINAL INSIGHTS RESPONSE:")
-        print("=" * 80)
-        print(f"Query Identifier: {query_identifier}")
-        print(f"SQL Query: {sql_query}")
+      
+        print(f"SQL Query: {query}")
         print("=" * 80)
         
         # Prepare final response
         final_response = {
             "success": True,
-            "query": user_query,
-            "query_identifier": query_identifier,
-            "sql_query": sql_query.strip(),
-            "description": get_query_description(query_identifier)
+            "user_question": user_query,
+            "sql_query": query,
         }
         
         logger.info(f"Successfully processed insights query: {json.dumps(final_response)}")
@@ -792,45 +764,6 @@ def process_insights_query():
             "error": f"Internal server error: {str(e)}"
         }), 500
 
-def get_query_description(query_identifier):
-    """
-    Get a human-readable description for each query identifier
-    """
-    descriptions = {
-        "DAILY_THROUGHPUT_ANALYSIS": "Track overall terminal productivity, identify peak/low activity periods, and monitor capacity utilization trends",
-        "BAY_PERFORMANCE_COMPARISON": "Identify high-performing vs. underperforming bays, optimize resource allocation, and detect equipment maintenance needs",
-        "FLOW_RATE_PERFORMANCE_ANALYSIS": "Optimize equipment efficiency, identify technical issues, and benchmark performance across different product types and bays",
-        "SCHEDULE_ADHERENCE_ANALYSIS": "Monitor operational efficiency, identify scheduling bottlenecks, and improve customer service by reducing delays",
-        "PRODUCT_PORTFOLIO_PERFORMANCE": "Analyze product mix profitability, identify high-volume vs. specialty products, and optimize terminal configuration",
-        "OPERATIONAL_TIME_PATTERNS": "Identify optimal operating hours, plan staffing schedules, and discover seasonal or weekly trends for capacity planning"
-    }
-    return descriptions.get(query_identifier, "No description available")
-
-@app.route('/insights/queries', methods=['GET'])
-def list_insights_queries():
-    """
-    List all available insights queries with their descriptions
-    """
-    try:
-        queries_info = []
-        for identifier, sql_query in INSIGHTS_SQL_QUERIES.items():
-            queries_info.append({
-                "identifier": identifier,
-                "description": get_query_description(identifier),
-                "sql_query": sql_query.strip()
-            })
-        
-        return jsonify({
-            "success": True,
-            "queries": queries_info,
-            "total_count": len(queries_info)
-        }), 200
-        
-    except Exception as e:
-        logger.error(f"Error listing insights queries: {str(e)}")
-        return jsonify({
-            "error": f"Failed to list insights queries: {str(e)}"
-        }), 500
 
 
 if __name__ == '__main__':
