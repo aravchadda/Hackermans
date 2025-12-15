@@ -840,4 +840,4 @@ if __name__ == '__main__':
     print(f"\nMake sure Ollama is running with: ollama serve")
     print(f"And pull the model if needed: ollama pull {MODEL_NAME}\n")
     
-    app.run(debug=True, host='0.0.0.0', port=5000)
+    app.run(debug=True, host='0.0.0.0', port=5001)
