@@ -14,11 +14,13 @@ const apiClient = axios.create({
 // Add request interceptor for logging
 apiClient.interceptors.request.use(
   (config) => {
-    console.log(`Making API request: ${config.method?.toUpperCase()} ${config.url}`);
+    console.log(`🌐 Making API request: ${config.method?.toUpperCase()} ${config.baseURL}${config.url}`);
+    console.log(`🌐 Request params:`, config.params);
+    console.log(`🌐 Full URL:`, `${config.baseURL}${config.url}?${new URLSearchParams(config.params || {}).toString()}`);
     return config;
   },
   (error) => {
-    console.error('Request error:', error);
+    console.error('❌ Request error:', error);
     return Promise.reject(error);
   }
 );
@@ -26,10 +28,19 @@ apiClient.interceptors.request.use(
 // Add response interceptor for error handling
 apiClient.interceptors.response.use(
   (response) => {
+    console.log(`✅ API Response: ${response.config.method?.toUpperCase()} ${response.config.url} - Status: ${response.status}`);
     return response;
   },
   (error) => {
-    console.error('API Error:', error.response?.data || error.message);
+    console.error('❌ API Error:', {
+      message: error.message,
+      url: error.config?.url,
+      baseURL: error.config?.baseURL,
+      fullURL: error.config ? `${error.config.baseURL}${error.config.url}` : 'unknown',
+      status: error.response?.status,
+      data: error.response?.data,
+      code: error.code
+    });
     return Promise.reject(error);
   }
 );
@@ -66,8 +77,21 @@ export const apiService = {
   // Get available columns for chart axes
 
   // Get chart data based on x and y axes - now supports any table
-  async getChartData(xAxis, yAxis, chartType, limit = 1000, filters = {}, tableName = 'Shipment') {
+  async getChartData(xAxis, yAxis, chartType, limit = 1000, filters = {}, tableName) {
     try {
+      console.log('getChartData called with:', { xAxis, yAxis, chartType, limit, filters, tableName });
+      
+      if (!tableName) {
+        console.error('getChartData: tableName is required but was not provided');
+        return { data: [], isMultiValue: false, yAxes: [] };
+      }
+      
+      if (!xAxis || !yAxis) {
+        console.error('getChartData: xAxis and yAxis are required', { xAxis, yAxis });
+        return { data: [], isMultiValue: false, yAxes: [] };
+      }
+      
+      console.log('getChartData: Making API call with tableName:', tableName);
       const params = {
         tableName,
         xAxis,
@@ -81,17 +105,32 @@ export const apiService = {
       if (filters.yMin !== undefined && filters.yMin !== '') params.yMin = filters.yMin;
       if (filters.yMax !== undefined && filters.yMax !== '') params.yMax = filters.yMax;
       
+      console.log('getChartData: Request params:', params);
+      console.log('getChartData: Full URL will be:', `${API_BASE_URL}/chart-data?${new URLSearchParams(params).toString()}`);
+      
       const response = await apiClient.get('/chart-data', { params });
+      console.log('getChartData: Response received:', { success: response.data.success, count: response.data.count });
       return response.data.success ? response.data : { data: [], isMultiValue: false, yAxes: [] };
     } catch (error) {
       console.error('Error fetching chart data:', error);
+      console.error('Error details:', {
+        message: error.message,
+        response: error.response?.data,
+        status: error.response?.status,
+        url: error.config?.url
+      });
       return { data: [], isMultiValue: false, yAxes: [] };
     }
   },
 
   // Get chart data with multiple y-axis fields - now supports any table
-  async getMultiValueChartData(xAxis, yAxes, chartType, limit = 1000, filters = {}, tableName = 'Shipment') {
+  async getMultiValueChartData(xAxis, yAxes, chartType, limit = 1000, filters = {}, tableName) {
     try {
+      if (!tableName) {
+        console.error('getMultiValueChartData: tableName is required');
+        return { data: [], isMultiValue: false, yAxes: [] };
+      }
+      console.log('getMultiValueChartData: Using tableName:', tableName);
       const params = {
         tableName,
         xAxis,
@@ -286,6 +325,35 @@ export const apiService = {
       return response.data.success ? response.data.view : null;
     } catch (error) {
       console.error('Error fetching view:', error);
+      throw error;
+    }
+  },
+
+  // Get all existing database views
+  async getDatabaseViews() {
+    try {
+      const response = await apiClient.get('/database-views');
+      return response.data.success ? response.data.views : [];
+    } catch (error) {
+      console.error('Error fetching database views:', error);
+      return [];
+    }
+  },
+
+  // Get columns from a database view
+  async getDatabaseViewColumns(viewName) {
+    try {
+      const response = await apiClient.get(`/database-views/${viewName}/columns`);
+      if (response.data.success) {
+        return response.data.columns || [];
+      } else {
+        // If the API returns success: false, throw an error with the message
+        const error = new Error(response.data.error || 'Failed to fetch columns');
+        error.response = { data: response.data };
+        throw error;
+      }
+    } catch (error) {
+      console.error('Error fetching database view columns:', error);
       throw error;
     }
   },

@@ -8,8 +8,21 @@ const registerChartDataRoutes = (app, { runQuery }) => {
 
     // Dynamic chart data endpoint - works with any table
     app.get('/api/chart-data', async (req, res) => {
+        console.log('📥 /api/chart-data route called');
+        console.log('📥 Request query params:', req.query);
+        console.log('📥 Request URL:', req.url);
+        console.log('📥 Request method:', req.method);
+        
         try {
-            const { tableName = 'Shipment', xAxis, yAxis, yAxes, limit = 1000, xMin, xMax, yMin, yMax } = req.query;
+            let { tableName, xAxis, yAxis, yAxes, limit = 1000, xMin, xMax, yMin, yMax } = req.query;
+            
+            // Require tableName parameter - use the selected view/table name
+            if (!tableName) {
+                return res.status(400).json({
+                    success: false,
+                    error: 'tableName parameter is required. Please specify which view or table to query.'
+                });
+            }
             
             if (!xAxis || (!yAxis && !yAxes)) {
                 return res.status(400).json({
@@ -18,25 +31,58 @@ const registerChartDataRoutes = (app, { runQuery }) => {
                 });
             }
             
-            // Get actual columns from database schema for the specified table
-            const columns = await runQuery(`
-                SELECT COLUMN_NAME
-                FROM INFORMATION_SCHEMA.COLUMNS
-                WHERE TABLE_NAME = '${tableName}'
-                ORDER BY ORDINAL_POSITION
+            // Determine the actual table/view to query from
+            // The tableName parameter should be the selected view/table name from the frontend
+            let actualTableName = tableName;
+            
+            // First, check if this is a custom view and get base_view_name if it exists
+            const customView = await runQuery(`
+                SELECT base_view_name
+                FROM custom_views
+                WHERE view_name = '${tableName.replace(/'/g, "''")}'
             `);
             
-            const allowedColumns = columns.map(col => col.COLUMN_NAME);
-            
-            if (allowedColumns.length === 0) {
-                return res.status(400).json({
-                    success: false,
-                    error: `View or table '${tableName}' not found or has no columns`
-                });
+            if (customView.length > 0 && customView[0].base_view_name) {
+                // It's a custom view, use the base_view_name (the actual database view it references)
+                actualTableName = customView[0].base_view_name;
+            } else {
+                // Check if tableName is a database view (not a table)
+                // If it's a view, use it directly; if it's a table, also use it directly
+                // The key is: use whatever was selected, don't default to a fixed table
+                const isView = await runQuery(`
+                    SELECT TABLE_NAME
+                    FROM INFORMATION_SCHEMA.VIEWS
+                    WHERE TABLE_NAME = '${tableName.replace(/'/g, "''")}'
+                `);
+                
+                if (isView.length > 0) {
+                    // It's a database view, use it directly
+                    actualTableName = tableName;
+                } else {
+                    // Check if it's a table
+                    const isTable = await runQuery(`
+                        SELECT TABLE_NAME
+                        FROM INFORMATION_SCHEMA.TABLES
+                        WHERE TABLE_TYPE = 'BASE TABLE' AND TABLE_NAME = '${tableName.replace(/'/g, "''")}'
+                    `);
+                    
+                    if (isTable.length > 0) {
+                        // It's a table, use it directly
+                        actualTableName = tableName;
+                    } else {
+                        // Not found as view or table, but use it anyway (will error if invalid, which is expected)
+                        actualTableName = tableName;
+                    }
+                }
             }
             
-            // Allow all fields for Y-axis values - no restrictions
-            const allowedYAxisColumns = allowedColumns;
+            // Use the selected view/table name - don't default to a fixed table
+            // The actualTableName is now set to whatever was selected (view or table)
+            
+            console.log(`Querying from view/table: ${actualTableName} (requested: ${tableName})`);
+            
+            // Note: We no longer validate columns since we removed those constraints
+            // The SQL query will naturally fail if columns don't exist, which is the expected behavior
             
             // Determine which y-axis fields to use
             let yAxisFields = [];
@@ -48,33 +94,19 @@ const registerChartDataRoutes = (app, { runQuery }) => {
                 yAxisFields = [yAxis];
             }
             
-            // Validate x-axis field
-            if (!allowedColumns.includes(xAxis)) {
-                return res.status(400).json({
-                    success: false,
-                    error: 'Invalid xAxis column name. Allowed columns: ' + allowedColumns.join(', ')
-                });
-            }
-            
-            // Validate all y-axis fields
-            for (const field of yAxisFields) {
-                if (!allowedYAxisColumns.includes(field)) {
-                    return res.status(400).json({
-                        success: false,
-                        error: `Invalid yAxis column name: ${field}. Allowed columns: ` + allowedYAxisColumns.join(', ')
-                    });
-                }
-            }
-            
             // Build WHERE conditions for range filters
             const xExpr = exprForColumn(xAxis);
-            let whereConditions = [`${xExpr} IS NOT NULL`];
+            let whereConditions = [];
             
-            // Add null checks for all y-axis fields
-            yAxisFields.forEach(field => {
-                const fExpr = exprForColumn(field);
-                whereConditions.push(`${fExpr} IS NOT NULL`);
-            });
+            // Only add IS NOT NULL checks if we want to filter out nulls
+            // For now, make it optional - comment out to allow nulls
+            // whereConditions.push(`${xExpr} IS NOT NULL`);
+            
+            // Add null checks for all y-axis fields (optional - can be removed if causing issues)
+            // yAxisFields.forEach(field => {
+            //     const fExpr = exprForColumn(field);
+            //     whereConditions.push(`${fExpr} IS NOT NULL`);
+            // });
             
             // Apply range filters to the actual selected columns
             const quote = (v) => `'${String(v).replace(/'/g, "''")}'`;
@@ -101,7 +133,10 @@ const registerChartDataRoutes = (app, { runQuery }) => {
                 });
             }
             
-            const whereClause = whereConditions.join(' AND ');
+            // Build WHERE clause - use 1=1 if no conditions to ensure valid SQL
+            const whereClause = whereConditions.length > 0 
+                ? whereConditions.join(' AND ') 
+                : '1=1';
             
             // Build SELECT clause with x-axis and all y-axis fields
             const selectFields = [exprForColumn(xAxis) + ' as x_value'];
@@ -126,7 +161,7 @@ const registerChartDataRoutes = (app, { runQuery }) => {
                     SELECT 
                         ${xExpr} as x_value,
                         ${aggSelects.join(', ')}
-                    FROM [${tableName}]
+                    FROM [${actualTableName.replace(/\]/g, ']]')}]
                     WHERE ${whereClause}
                     GROUP BY ${xExpr}
                     ORDER BY x_value ASC
@@ -135,14 +170,39 @@ const registerChartDataRoutes = (app, { runQuery }) => {
                 query = `
                     SELECT 
                         ${selectFields.join(', ')}
-                    FROM [${tableName}]
+                    FROM [${actualTableName.replace(/\]/g, ']]')}]
                     WHERE ${whereClause}
                     ORDER BY (SELECT NULL)
                     OFFSET 0 ROWS FETCH NEXT ${parseInt(limit)} ROWS ONLY
                 `;
             }
             
+            console.log('Executing query:', query);
+            console.log('Query parameters:', { tableName, actualTableName, xAxis, yAxis, yAxes, whereClause });
+            
             const data = await runQuery(query);
+            
+            console.log(`Query returned ${data.length} records`);
+            
+            // If no data returned, try a simpler query to check if the view/table has any data
+            if (data.length === 0) {
+                try {
+                    const countQuery = `SELECT COUNT(*) as total FROM [${actualTableName.replace(/\]/g, ']]')}]`;
+                    const countResult = await runQuery(countQuery);
+                    console.log(`Total records in ${actualTableName}:`, countResult[0]?.total || 0);
+                    
+                    // Also check if columns exist
+                    const columnCheck = await runQuery(`
+                        SELECT COLUMN_NAME 
+                        FROM INFORMATION_SCHEMA.COLUMNS 
+                        WHERE TABLE_NAME = '${actualTableName.replace(/'/g, "''")}'
+                        AND COLUMN_NAME IN ('${xAxis.replace(/'/g, "''")}', ${yAxisFields.map(f => `'${f.replace(/'/g, "''")}'`).join(', ')})
+                    `);
+                    console.log('Available columns matching requested fields:', columnCheck.map(c => c.COLUMN_NAME));
+                } catch (checkError) {
+                    console.error('Error checking table/view:', checkError.message);
+                }
+            }
             
             res.json({
                 success: true,

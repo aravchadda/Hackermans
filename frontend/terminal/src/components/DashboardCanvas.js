@@ -68,9 +68,10 @@ const DashboardCanvas = forwardRef(({ mode, showChat, onCreateChart, onDeleteCha
   const [loading, setLoading] = useState(false);
   const [rangeFilters, setRangeFilters] = useState({});
   const [availableColumns, setAvailableColumns] = useState([]);
-  const [selectedTable, setSelectedTable] = useState('shipments');
+  const [selectedTable, setSelectedTable] = useState(null); // Will be set when schema loads
   const [schema, setSchema] = useState({});
   const [tables, setTables] = useState([]);
+  const [viewNameMapping, setViewNameMapping] = useState({}); // Maps custom view names to base view names
 
   // Load database schema on mount
   useEffect(() => {
@@ -82,18 +83,35 @@ const DashboardCanvas = forwardRef(({ mode, showChat, onCreateChart, onDeleteCha
           setSchema(schemaData.schema);
           setTables(schemaData.tables || []);
           
-          // Set default table - prefer Shipment (capital S) if it exists, otherwise use first available
-          if (schemaData.schema.Shipment) {
-            setSelectedTable('Shipment');
-            setAvailableColumns(schemaData.schema.Shipment.columns);
-          } else if (schemaData.schema.shipments) {
-            setSelectedTable('shipments');
-            setAvailableColumns(schemaData.schema.shipments.columns);
-          } else if (schemaData.tables && schemaData.tables.length > 0) {
-            // Use first available table
-            const firstTable = schemaData.tables[0];
-            setSelectedTable(firstTable);
-            setAvailableColumns(schemaData.schema[firstTable]?.columns || []);
+          // Build mapping of custom view names to base view names
+          const mapping = {};
+          Object.keys(schemaData.schema).forEach(viewName => {
+            const viewInfo = schemaData.schema[viewName];
+            if (viewInfo.baseViewName) {
+              mapping[viewName] = viewInfo.baseViewName;
+              console.log(`Mapping: ${viewName} -> ${viewInfo.baseViewName}`);
+            }
+          });
+          setViewNameMapping(mapping);
+          
+          // Set default to first available view/table from schema
+          // Don't hardcode 'shipments' - use whatever views are available
+          let defaultTable = null;
+          if (schemaData.tables && schemaData.tables.length > 0) {
+            // Use first available view/table from the schema
+            defaultTable = schemaData.tables[0];
+          } else if (schemaData.schema && Object.keys(schemaData.schema).length > 0) {
+            // Fallback: use first key from schema object
+            defaultTable = Object.keys(schemaData.schema)[0];
+          }
+          
+          if (defaultTable) {
+            setSelectedTable(defaultTable);
+            setAvailableColumns(schemaData.schema[defaultTable]?.columns || []);
+            console.log('Default view/table set to:', defaultTable);
+          } else {
+            // If no views/tables found, set to null but log a warning
+            console.warn('No views/tables found in schema');
           }
           console.log('Schema loaded:', schemaData);
         }
@@ -249,11 +267,18 @@ const DashboardCanvas = forwardRef(({ mode, showChat, onCreateChart, onDeleteCha
     }
   }, [onCreateChart, onDeleteChart, onUpdateChart]);
 
-  // Load saved layout on component mount
+  // Load saved layout on component mount - but wait for schema to be loaded first
   useEffect(() => {
     const loadLayout = async () => {
+      // Wait for schema and selectedTable to be loaded
+      if (!selectedTable || tables.length === 0) {
+        console.log('DashboardCanvas: Waiting for schema to load before loading layout...');
+        return;
+      }
+      
       try {
         console.log('DashboardCanvas: Loading layout from API...');
+        console.log('DashboardCanvas: selectedTable is:', selectedTable, 'tables:', tables);
         
         // Use the refresh function to load items from API
         const apiItems = await refreshItemsFromAPI();
@@ -346,7 +371,56 @@ const DashboardCanvas = forwardRef(({ mode, showChat, onCreateChart, onDeleteCha
     };
     
     loadLayout();
-  }, []);
+  }, [selectedTable, tables]); // Re-run when selectedTable or tables change
+
+  // Refetch chart data when selectedTable changes and items already exist
+  useEffect(() => {
+    if (!selectedTable || items.length === 0) {
+      return; // Don't fetch if no table selected or no items
+    }
+    
+    console.log('🔄 selectedTable changed, refetching data for existing items...');
+    const refetchData = async () => {
+      setLoading(true);
+      const fetchPromises = items.map(async (item) => {
+        const { xField, yField, yFields, type } = item.config;
+        
+        // Check if chart has required fields configured
+        const isPieChartReady = type === 'pie' && yField;
+        const isOtherChartReady = type !== 'pie' && xField && (yField || yFields);
+        
+        if (isPieChartReady || isOtherChartReady) {
+          try {
+            // Resolve custom view name to base view name
+            let tableToUse = selectedTable;
+            if (viewNameMapping[selectedTable]) {
+              tableToUse = viewNameMapping[selectedTable];
+              console.log(`🔄 Refetching data for ${item.id}: resolved "${selectedTable}" to "${tableToUse}"`);
+            } else {
+              console.log(`🔄 Refetching data for ${item.id} with table: ${tableToUse}`);
+            }
+            
+            const isMultiValue = yFields && yFields.length > 1;
+            const data = isMultiValue ? 
+              await fetchMultiValueChartData(xField, yFields, type, {}) :
+              await fetchChartData(xField, yField, type, {});
+            setChartData(prev => ({
+              ...prev,
+              [item.id]: data
+            }));
+            console.log(`✅ Refetched data for ${item.id}:`, data.data ? data.data.length : data.length, 'records');
+          } catch (error) {
+            console.error(`❌ Error refetching data for ${item.id}:`, error);
+          }
+        }
+      });
+      
+      await Promise.all(fetchPromises);
+      setLoading(false);
+    };
+    
+    refetchData();
+  }, [selectedTable, viewNameMapping]); // Depend on selectedTable and viewNameMapping
 
   // Save layout whenever items change (only in design mode)
   useEffect(() => {
@@ -368,9 +442,35 @@ const DashboardCanvas = forwardRef(({ mode, showChat, onCreateChart, onDeleteCha
 
   // Fetch chart data from backend with table name
   const fetchChartData = async (xAxis, yAxis, chartType, filters = {}) => {
+    console.log('🚀 fetchChartData CALLED with:', { xAxis, yAxis, chartType, filters, selectedTable, tables });
     try {
       setLoading(true);
-      const data = await apiService.getChartData(xAxis, yAxis, chartType, 1000, filters, selectedTable);
+      // Use selectedTable or fallback to first available table from schema
+      let tableToUse = selectedTable || (tables.length > 0 ? tables[0] : null);
+      
+      // Resolve custom view name to base view name if it's a custom view
+      if (tableToUse && viewNameMapping[tableToUse]) {
+        const baseViewName = viewNameMapping[tableToUse];
+        console.log(`🔄 Resolving custom view "${tableToUse}" to base view "${baseViewName}"`);
+        tableToUse = baseViewName;
+      }
+      
+      console.log('🚀 fetchChartData: tableToUse =', tableToUse);
+      
+      if (!tableToUse) {
+        console.error('❌ fetchChartData: No view/table selected and no tables available');
+        console.error('❌ selectedTable:', selectedTable, 'tables:', tables);
+        return { data: [], isMultiValue: false, yAxes: [] };
+      }
+      
+      if (!xAxis || !yAxis) {
+        console.error('❌ fetchChartData: Missing xAxis or yAxis', { xAxis, yAxis });
+        return { data: [], isMultiValue: false, yAxes: [] };
+      }
+      
+      console.log('🚀 fetchChartData: Calling apiService.getChartData with:', { xAxis, yAxis, chartType, filters, tableToUse });
+      const data = await apiService.getChartData(xAxis, yAxis, chartType, 1000, filters, tableToUse);
+      console.log('🚀 fetchChartData: Received data:', data);
       return data;
     } catch (error) {
       console.error('Error fetching chart data:', error);
@@ -382,9 +482,35 @@ const DashboardCanvas = forwardRef(({ mode, showChat, onCreateChart, onDeleteCha
 
   // Fetch multi-value chart data from backend with table name
   const fetchMultiValueChartData = async (xAxis, yAxes, chartType, filters = {}) => {
+    console.log('🚀 fetchMultiValueChartData CALLED with:', { xAxis, yAxes, chartType, filters, selectedTable, tables });
     try {
       setLoading(true);
-      const data = await apiService.getMultiValueChartData(xAxis, yAxes, chartType, 1000, filters, selectedTable);
+      // Use selectedTable or fallback to first available table from schema
+      let tableToUse = selectedTable || (tables.length > 0 ? tables[0] : null);
+      
+      // Resolve custom view name to base view name if it's a custom view
+      if (tableToUse && viewNameMapping[tableToUse]) {
+        const baseViewName = viewNameMapping[tableToUse];
+        console.log(`🔄 Resolving custom view "${tableToUse}" to base view "${baseViewName}"`);
+        tableToUse = baseViewName;
+      }
+      
+      console.log('🚀 fetchMultiValueChartData: tableToUse =', tableToUse);
+      
+      if (!tableToUse) {
+        console.error('❌ fetchMultiValueChartData: No view/table selected and no tables available');
+        console.error('❌ selectedTable:', selectedTable, 'tables:', tables);
+        return { data: [], isMultiValue: false, yAxes: [] };
+      }
+      
+      if (!xAxis || !yAxes || (Array.isArray(yAxes) && yAxes.length === 0)) {
+        console.error('❌ fetchMultiValueChartData: Missing xAxis or yAxes', { xAxis, yAxes });
+        return { data: [], isMultiValue: false, yAxes: [] };
+      }
+      
+      console.log('🚀 fetchMultiValueChartData: Calling apiService.getMultiValueChartData with:', { xAxis, yAxes, chartType, filters, tableToUse });
+      const data = await apiService.getMultiValueChartData(xAxis, yAxes, chartType, 1000, filters, tableToUse);
+      console.log('🚀 fetchMultiValueChartData: Received data:', data);
       return data;
     } catch (error) {
       console.error('Error fetching multi-value chart data:', error);

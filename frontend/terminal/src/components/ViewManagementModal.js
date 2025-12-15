@@ -11,15 +11,57 @@ const ViewManagementModal = ({ isOpen, onClose, onViewCreated }) => {
   
   // Create form state
   const [viewName, setViewName] = useState('');
-  const [sqlQuery, setSqlQuery] = useState('');
+  const [selectedBaseView, setSelectedBaseView] = useState('');
+  const [databaseViews, setDatabaseViews] = useState([]);
   const [description, setDescription] = useState('');
-  const [columns, setColumns] = useState([{ columnName: '', columnDescription: '', dataType: '' }]);
+  const [columns, setColumns] = useState([]);
 
   useEffect(() => {
     if (isOpen) {
       loadViews();
+      loadDatabaseViews();
     }
   }, [isOpen]);
+
+  const loadDatabaseViews = async () => {
+    try {
+      const views = await apiService.getDatabaseViews();
+      setDatabaseViews(views);
+    } catch (error) {
+      console.error('Failed to load database views:', error);
+    }
+  };
+
+  const handleBaseViewChange = async (viewName) => {
+    setSelectedBaseView(viewName);
+    setError(''); // Clear previous errors
+    if (viewName) {
+      try {
+        const viewColumns = await apiService.getDatabaseViewColumns(viewName);
+        if (viewColumns && viewColumns.length > 0) {
+          // Initialize columns with empty descriptions
+          setColumns(viewColumns.map(col => ({
+            columnName: col.name,
+            columnDescription: '',
+            dataType: col.dataType
+          })));
+        } else {
+          setError(`View '${viewName}' has no columns or has broken dependencies. It may reference objects that do not exist.`);
+          setColumns([]);
+        }
+      } catch (error) {
+        const errorMsg = error.response?.data?.error || error.message || 'Unknown error';
+        if (errorMsg.includes('broken dependencies') || errorMsg.includes('binding errors')) {
+          setError(`View '${viewName}' has broken dependencies and cannot be used. The view references objects that do not exist in the database. Please select a different view.`);
+        } else {
+          setError(`Failed to load view columns: ${errorMsg}`);
+        }
+        setColumns([]);
+      }
+    } else {
+      setColumns([]);
+    }
+  };
 
   const loadViews = async () => {
     setIsLoading(true);
@@ -34,15 +76,13 @@ const ViewManagementModal = ({ isOpen, onClose, onViewCreated }) => {
   };
 
   const handleCreateView = async () => {
-    if (!viewName.trim() || !sqlQuery.trim()) {
-      setError('View name and SQL query are required');
+    if (!viewName.trim()) {
+      setError('View name is required');
       return;
     }
 
-    // Validate SQL query
-    const trimmedQuery = sqlQuery.trim().toLowerCase();
-    if (!trimmedQuery.startsWith('select')) {
-      setError('SQL query must be a SELECT statement');
+    if (!selectedBaseView.trim()) {
+      setError('Please select a base view');
       return;
     }
 
@@ -53,7 +93,7 @@ const ViewManagementModal = ({ isOpen, onClose, onViewCreated }) => {
     try {
       const viewData = {
         viewName: viewName.trim(),
-        sqlQuery: sqlQuery.trim(),
+        baseViewName: selectedBaseView.trim(),
         description: description.trim() || null,
         columns: columns.filter(col => col.columnName.trim())
       };
@@ -63,9 +103,9 @@ const ViewManagementModal = ({ isOpen, onClose, onViewCreated }) => {
       if (result.success) {
         setSuccess('View created successfully!');
         setViewName('');
-        setSqlQuery('');
+        setSelectedBaseView('');
         setDescription('');
-        setColumns([{ columnName: '', columnDescription: '', dataType: '' }]);
+        setColumns([]);
         
         // Reload views list
         await loadViews();
@@ -123,14 +163,6 @@ const ViewManagementModal = ({ isOpen, onClose, onViewCreated }) => {
     }
   };
 
-  const addColumn = () => {
-    setColumns([...columns, { columnName: '', columnDescription: '', dataType: '' }]);
-  };
-
-  const removeColumn = (index) => {
-    setColumns(columns.filter((_, i) => i !== index));
-  };
-
   const updateColumn = (index, field, value) => {
     const updated = [...columns];
     updated[index][field] = value;
@@ -139,9 +171,9 @@ const ViewManagementModal = ({ isOpen, onClose, onViewCreated }) => {
 
   const handleClose = () => {
     setViewName('');
-    setSqlQuery('');
+    setSelectedBaseView('');
     setDescription('');
-    setColumns([{ columnName: '', columnDescription: '', dataType: '' }]);
+    setColumns([]);
     setError('');
     setSuccess('');
     setActiveTab('list');
@@ -269,6 +301,25 @@ const ViewManagementModal = ({ isOpen, onClose, onViewCreated }) => {
                 />
               </div>
 
+              {/* Base View Selection */}
+              <div>
+                <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
+                  Select Base View *
+                </label>
+                <select
+                  value={selectedBaseView}
+                  onChange={(e) => handleBaseViewChange(e.target.value)}
+                  className="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-md bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                >
+                  <option value="">-- Select a view --</option>
+                  {databaseViews.map((view) => (
+                    <option key={view.view_name} value={view.view_name}>
+                      {view.view_name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
               {/* Description */}
               <div>
                 <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
@@ -283,67 +334,32 @@ const ViewManagementModal = ({ isOpen, onClose, onViewCreated }) => {
                 />
               </div>
 
-              {/* SQL Query */}
-              <div>
-                <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
-                  SQL Query (SELECT only) *
-                </label>
-                <textarea
-                  value={sqlQuery}
-                  onChange={(e) => setSqlQuery(e.target.value)}
-                  placeholder="SELECT column1, column2 FROM table WHERE condition"
-                  rows={6}
-                  className="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-md bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-blue-500 font-mono text-sm"
-                />
-              </div>
-
               {/* Column Descriptions */}
-              <div>
-                <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
-                  Column Descriptions (Optional)
-                </label>
-                <div className="space-y-2">
-                  {columns.map((col, index) => (
-                    <div key={index} className="flex gap-2">
-                      <input
-                        type="text"
-                        placeholder="Column name"
-                        value={col.columnName}
-                        onChange={(e) => updateColumn(index, 'columnName', e.target.value)}
-                        className="flex-1 px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-md bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                      />
-                      <input
-                        type="text"
-                        placeholder="Description"
-                        value={col.columnDescription}
-                        onChange={(e) => updateColumn(index, 'columnDescription', e.target.value)}
-                        className="flex-1 px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-md bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                      />
-                      <input
-                        type="text"
-                        placeholder="Data type"
-                        value={col.dataType}
-                        onChange={(e) => updateColumn(index, 'dataType', e.target.value)}
-                        className="w-32 px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-md bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                      />
-                      {columns.length > 1 && (
-                        <button
-                          onClick={() => removeColumn(index)}
-                          className="px-3 py-2 bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-300 rounded hover:bg-red-200 dark:hover:bg-red-900/50"
-                        >
-                          Remove
-                        </button>
-                      )}
-                    </div>
-                  ))}
-                  <button
-                    onClick={addColumn}
-                    className="text-sm text-blue-600 dark:text-blue-400 hover:underline"
-                  >
-                    + Add Column Description
-                  </button>
+              {selectedBaseView && columns.length > 0 && (
+                <div>
+                  <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
+                    Column Descriptions
+                  </label>
+                  <div className="space-y-2 max-h-64 overflow-y-auto">
+                    {columns.map((col, index) => (
+                      <div key={index} className="flex gap-2 items-start">
+                        <div className="flex-1">
+                          <div className="text-xs text-slate-500 dark:text-slate-400 mb-1">
+                            {col.columnName} ({col.dataType})
+                          </div>
+                          <input
+                            type="text"
+                            placeholder="Enter description for this column"
+                            value={col.columnDescription}
+                            onChange={(e) => updateColumn(index, 'columnDescription', e.target.value)}
+                            className="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-md bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                          />
+                        </div>
+                      </div>
+                    ))}
+                  </div>
                 </div>
-              </div>
+              )}
 
               {/* Error/Success Messages */}
               {error && (
@@ -410,7 +426,7 @@ const ViewManagementModal = ({ isOpen, onClose, onViewCreated }) => {
           {activeTab === 'create' && (
             <button
               onClick={handleCreateView}
-              disabled={!viewName.trim() || !sqlQuery.trim() || isLoading}
+              disabled={!viewName.trim() || !selectedBaseView.trim() || isLoading}
               className="px-4 py-2 text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 disabled:bg-slate-400 disabled:cursor-not-allowed rounded-md transition-colors"
             >
               {isLoading ? 'Creating...' : 'Create View'}

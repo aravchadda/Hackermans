@@ -81,7 +81,8 @@ const initializeTables = async () => {
      CREATE TABLE custom_views (
       id INT IDENTITY(1,1) PRIMARY KEY,
       view_name NVARCHAR(255) NOT NULL UNIQUE,
-      sql_query NVARCHAR(MAX) NOT NULL,
+      sql_query NVARCHAR(MAX),
+      base_view_name NVARCHAR(255),
       description NVARCHAR(MAX),
       created_at DATETIME2 DEFAULT GETDATE(),
       updated_at DATETIME2 DEFAULT GETDATE()
@@ -120,6 +121,44 @@ const initializeTables = async () => {
   } catch (error) {
     // Constraint might already exist or table might not exist yet, ignore
     console.log('Foreign key constraint setup:', error.message);
+  }
+
+  // Add base_view_name column if it doesn't exist (migration)
+  try {
+    const columnExists = await runQuery(`
+      SELECT COUNT(*) as count
+      FROM sys.columns
+      WHERE object_id = OBJECT_ID('custom_views') AND name = 'base_view_name'
+    `);
+    
+    if (columnExists[0].count === 0) {
+      await runQuery(`
+        ALTER TABLE custom_views
+        ADD base_view_name NVARCHAR(255)
+      `);
+      console.log(' Added base_view_name column to custom_views');
+    }
+  } catch (error) {
+    console.log('Migration check for base_view_name:', error.message);
+  }
+
+  // Make sql_query nullable if it's not already (migration)
+  try {
+    const sqlQueryNullable = await runQuery(`
+      SELECT IS_NULLABLE
+      FROM INFORMATION_SCHEMA.COLUMNS
+      WHERE TABLE_NAME = 'custom_views' AND COLUMN_NAME = 'sql_query'
+    `);
+    
+    if (sqlQueryNullable.length > 0 && sqlQueryNullable[0].IS_NULLABLE === 'NO') {
+      await runQuery(`
+        ALTER TABLE custom_views
+        ALTER COLUMN sql_query NVARCHAR(MAX) NULL
+      `);
+      console.log(' Made sql_query column nullable');
+    }
+  } catch (error) {
+    console.log('Migration check for sql_query nullable:', error.message);
   }
 
   console.log(' Database tables initialized');
