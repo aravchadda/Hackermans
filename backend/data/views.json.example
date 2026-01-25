@@ -1,0 +1,40 @@
+{
+  "views": [
+    {
+      "view_name": "example_view_1",
+      "base_view_name": "shipments",
+      "columns": [
+        {
+          "column_name": "BayCode",
+          "column_description": "The bay where the shipment was processed",
+          "data_type": "VARCHAR"
+        },
+        {
+          "column_name": "GrossQuantity",
+          "column_description": "Total quantity of the shipment",
+          "data_type": "DECIMAL"
+        }
+      ]
+    },
+    {
+      "view_name": "example_view_2",
+      "base_view_name": "shipments",
+      "columns": [
+        {
+          "column_name": "BaseProductCode",
+          "column_description": "Product code identifier",
+          "data_type": "VARCHAR"
+        },
+        {
+          "column_name": "FlowRate",
+          "column_description": "Rate of flow for the shipment",
+          "data_type": "DECIMAL"
+        }
+      ]
+    }
+  ]
+}
+
+
+
+

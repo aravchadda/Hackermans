@@ -1,0 +1,49 @@
+{
+  "view_name": "vwBCUAlarms",
+  "custom_name": "vwBCUAlarms",
+  "view_description": "Provides a summary of all the notification",
+  "sql_query": "CREATE VIEW vwBCUAlarms AS SELECT * FROM NotificationLog WHERE MessageCode LIKE '%alarm%'",
+  "dateTime": "NotifiedDate",
+  "columns": [
+    {
+      "column_name": "ID",
+      "column_description": "unique identifier for each notification record"
+    },
+    {
+      "column_name": "Source",
+      "column_description": "source system or device generating the notification"
+    },
+    {
+      "column_name": "LocationCode",
+      "column_description": "code representing the location where the event occurred"
+    },
+    {
+      "column_name": "NotificationType",
+      "column_description": "type of notification such as ALARM or INFO"
+    },
+    {
+      "column_name": "MessageType",
+      "column_description": "category of the message, e.g., FAILURE or WARNING"
+    },
+    {
+      "column_name": "Priority",
+      "column_description": "priority level of the notification such as HIGH or LOW"
+    },
+    {
+      "column_name": "MessageCode",
+      "column_description": "code representing the workflow or message type"
+    },
+    {
+      "column_name": "Message",
+      "column_description": "detailed description of the notification or alarm"
+    },
+    {
+      "column_name": "NotifiedDate",
+      "column_description": "date and time when the notification was generated"
+    },
+    {
+      "column_name": "CreatedTime",
+      "column_description": "timestamp when the record was created in the system"
+    }
+  ]
+}

@@ -1,0 +1,41 @@
+{
+  "view_name": "vwGateToGate",
+  "custom_name": "vwGateToGate",
+  "view_description": "Provides a consolidated view of shipment statuses and related details from gate-in to gate-out, including compartments, driver, vehicle, and schedule.",
+  "sql_query": "CREATE VIEW vwGateToGate AS SELECT S.Code AS ShipmentCode, SST.ShipmentStatus, SST.UpdatedTime, SST.ShipmentCompartmentID, SST.ShipmentCompartmentStatus, S.DriverID, S.VehicleID, S.ScheduledDate FROM Shipment_Status_Time SST INNER JOIN Shipment S ON SST.ShipmentID = S.ID",
+  "dateTime": "UpdatedTime",
+  "columns": [
+    {
+      "column_name": "ShipmentCode",
+      "column_description": "stores the shipment code"
+    },
+    {
+      "column_name": "ShipmentStatus",
+      "column_description": "specifies each shipment status like READY, CHECKED_IN, LOADING, CLOSED etc."
+    },
+    {
+      "column_name": "UpdatedTime",
+      "column_description": "when the shipment status is updated it stores the updated time for each shipment"
+    },
+    {
+      "column_name": "ShipmentCompartmentID",
+      "column_description": "there are different compartments in the shipment, it stores the id for each compartment"
+    },
+    {
+      "column_name": "ShipmentCompartmentStatus",
+      "column_description": "stores the status of each compartment like LOADING, EMPTY, COMPLETED etc"
+    },
+    {
+      "column_name": "DriverID",
+      "column_description": "stores the id of the driver for each shipment"
+    },
+    {
+      "column_name": "VehicleID",
+      "column_description": "stores the vehicle id used for each shipment"
+    },
+    {
+      "column_name": "ScheduledDate",
+      "column_description": "specifies when the shipment is scheduled for"
+    }
+  ]
+}

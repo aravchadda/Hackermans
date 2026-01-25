@@ -1,0 +1,53 @@
+{
+  "view_name": "vwBayUtilization",
+  "custom_name": "vwBayUtilization",
+  "view_description": "Provides a summary of bay utilization during loading operations, including shipment, product, quantity, and associated resources.",
+  "sql_query": "CREATE VIEW vwBayUtilization AS SELECT DISTINCT S.Code AS ShipmentCode, BP.Code AS BaseProductCode, LBP.GrossQuantity, LBP.CreatedTime, T.Code AS TankCode, LBP.StartTime, LBP.EndTime, S.VehicleID, S.DriverID, S.ExitTime, B.Code AS BayCode FROM LoadingDetailsBP LBP INNER JOIN BaseProduct BP ON LBP.BaseProductID = BP.ID INNER JOIN ShipmentCompartment SC ON LBP.ShipmentCompartmentID = SC.ID INNER JOIN Shipment S ON SC.ShipmentID = S.ID INNER JOIN Bay B ON LBP.BayID = B.ID LEFT JOIN Tank T ON LBP.TankID = T.ID",
+  "dateTime": "ExitTime",
+  "columns": [
+    {
+      "column_name": "ShipmentCode",
+      "column_description": "stores the shipment code"
+    },
+    {
+      "column_name": "BaseProductCode",
+      "column_description": "stores the base product code linked to the loading"
+    },
+    {
+      "column_name": "GrossQuantity",
+      "column_description": "total quantity loaded before any deductions (e.g., tare/net)"
+    },
+    {
+      "column_name": "CreatedTime",
+      "column_description": "timestamp when the loading detail record was created"
+    },
+    {
+      "column_name": "TankCode",
+      "column_description": "identifier/code of the tank used for loading (if applicable)"
+    },
+    {
+      "column_name": "StartTime",
+      "column_description": "loading start time for the operation"
+    },
+    {
+      "column_name": "EndTime",
+      "column_description": "loading end time for the operation"
+    },
+    {
+      "column_name": "VehicleID",
+      "column_description": "stores the vehicle id used for the shipment"
+    },
+    {
+      "column_name": "DriverID",
+      "column_description": "stores the id of the driver for the shipment"
+    },
+    {
+      "column_name": "ExitTime",
+      "column_description": "time when the shipment exited the bay/gate"
+    },
+    {
+      "column_name": "BayCode",
+      "column_description": "identifier/code of the bay where loading occurred"
+    }
+  ]
+}

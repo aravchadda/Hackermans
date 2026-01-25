@@ -1,0 +1,17 @@
+{
+  "view_name": "myViewName",
+  "custom_name": "My Custom Display Name",
+  "view_description": "Description of what this view provides",
+  "sql_query": "CREATE VIEW myViewName AS SELECT column1, column2 FROM myTable WHERE condition = 'value'",
+  "dateTime": "column1",
+  "columns": [
+    {
+      "column_name": "column1",
+      "column_description": "Description of what this column represents"
+    },
+    {
+      "column_name": "column2",
+      "column_description": "Description of what this column represents"
+    }
+  ]
+}

@@ -1,0 +1,147 @@
+import React, { useState, useRef } from 'react';
+import DashboardHeader from './components/DashboardHeader';
+import ChartSidebar from './components/ChartSidebar';
+import DashboardCanvas from './components/DashboardCanvas';
+import ChatBox from './components/ChatBox';
+import AnalyticsDashboard from './AnalyticsDashboard';
+import CSVImportModal from './components/CSVImportModal';
+import ViewManagementModal from './components/ViewManagementModal';
+
+const CreativeDashboard = ({ mode: initialMode = "view", userRole = "operator" }) => {
+  const [mode, setMode] = useState(initialMode);
+  const [showChat, setShowChat] = useState(true);
+  const [showCSVImport, setShowCSVImport] = useState(false);
+  const [showViewManagement, setShowViewManagement] = useState(false);
+  const dashboardCanvasRef = useRef(null);
+
+  const handleCreateChart = (chartConfig) => {
+    // This will be passed to DashboardCanvas to create the chart
+    console.log('Creating chart from chatbot:', chartConfig);
+    
+    // Call the global function to create the chart
+    if (window.createChartFromChatbot) {
+      window.createChartFromChatbot(chartConfig);
+    }
+  };
+
+  const handleDeleteChart = (chartName) => {
+    // This will be passed to DashboardCanvas to delete the chart
+    console.log('Deleting chart from chatbot:', chartName);
+    
+    // Call the global function to delete the chart
+    if (window.deleteChartFromChatbot) {
+      window.deleteChartFromChatbot(chartName);
+    }
+  };
+
+  const handleUpdateChart = (chartConfig) => {
+    // This will be passed to DashboardCanvas to update the chart
+    console.log('CreativeDashboard: Updating chart from chatbot:', chartConfig);
+    
+    // Call the global function to update the chart
+    if (window.updateChartFromChatbot) {
+      console.log('CreativeDashboard: Calling window.updateChartFromChatbot');
+      window.updateChartFromChatbot(chartConfig);
+    } else {
+      console.error('CreativeDashboard: window.updateChartFromChatbot not found!');
+    }
+  };
+
+  const handleClearScreen = () => {
+    if (dashboardCanvasRef.current && dashboardCanvasRef.current.clearLayout) {
+      dashboardCanvasRef.current.clearLayout();
+    }
+  };
+
+  const handleImportCSV = () => {
+    setShowCSVImport(true);
+  };
+
+  const handleCSVImportSuccess = (result) => {
+    console.log('CSV import successful:', result);
+    // Optionally refresh data or show notification
+  };
+
+  const handleManageViews = () => {
+    setShowViewManagement(true);
+  };
+
+  const handleViewCreated = (view) => {
+    console.log('View created successfully:', view);
+    // Optionally refresh schema or show notification
+    // You might want to trigger a schema refresh in DashboardCanvas
+    if (dashboardCanvasRef.current && dashboardCanvasRef.current.refreshSchema) {
+      dashboardCanvasRef.current.refreshSchema();
+    }
+  };
+
+  // Handle analytics mode with special styling
+  if (mode === "analytics") {
+    return (
+      <div className="h-screen bg-gray-200 dark:bg-gray-800 flex flex-col overflow-hidden">
+        <DashboardHeader 
+          mode={mode} 
+          onModeChange={setMode} 
+          showChat={showChat}
+          onToggleChat={() => setShowChat(!showChat)}
+          userRole={userRole}
+          onClearScreen={handleClearScreen}
+          onImportCSV={handleImportCSV}
+          onManageViews={handleManageViews}
+        />
+        <div className="flex-1 flex min-h-0">
+          <AnalyticsDashboard />
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="h-screen bg-slate-50 dark:bg-slate-900 flex flex-col overflow-hidden">
+      <DashboardHeader 
+        mode={mode} 
+        onModeChange={setMode} 
+        showChat={showChat}
+        onToggleChat={() => setShowChat(!showChat)}
+        userRole={userRole}
+        onClearScreen={handleClearScreen}
+        onImportCSV={handleImportCSV}
+        onManageViews={handleManageViews}
+      />
+      <div className="flex-1 flex min-h-0">
+        <ChartSidebar isVisible={mode === "design"} />
+        <DashboardCanvas 
+          ref={dashboardCanvasRef}
+          mode={mode} 
+          showChat={showChat}
+          onCreateChart={handleCreateChart} 
+          onDeleteChart={handleDeleteChart} 
+          onUpdateChart={handleUpdateChart} 
+        />
+        <ChatBox 
+          isVisible={showChat} 
+          onClose={() => setShowChat(false)} 
+          onCreateChart={handleCreateChart}
+          onDeleteChart={handleDeleteChart}
+          onUpdateChart={handleUpdateChart}
+        />
+      </div>
+      
+      {/* CSV Import Modal */}
+      <CSVImportModal 
+        isOpen={showCSVImport}
+        onClose={() => setShowCSVImport(false)}
+        onImport={handleCSVImportSuccess}
+      />
+      
+      {/* View Management Modal */}
+      <ViewManagementModal 
+        isOpen={showViewManagement}
+        onClose={() => setShowViewManagement(false)}
+        onViewCreated={handleViewCreated}
+      />
+    </div>
+  );
+};
+
+export default CreativeDashboard;

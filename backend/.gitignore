@@ -1,0 +1,35 @@
+# Overrides directory - user customizations
+# Keep example files but ignore actual overrides
+overrides/routes/*.js
+!overrides/routes/example.js
+!overrides/routes/.gitkeep
+overrides/middleware/*.js
+overrides/utils/*.js
+!overrides/utils/example.js
+overrides/database/*.js
+!overrides/database/example.js
+
+# Node modules
+node_modules/
+
+# Environment files
+.env
+.env.local
+
+# Database files
+*.db
+*.db.wal
+*.db-shm
+
+# Uploads
+uploads/*
+!uploads/.gitkeep
+
+# Logs
+*.log
+npm-debug.log*
+
+# OS files
+.DS_Store
+Thumbs.db
+
