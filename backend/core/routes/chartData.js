@@ -14,9 +14,11 @@ const registerChartDataRoutes = (app, { runQuery }) => {
         console.log('📥 Request method:', req.method);
         
         try {
-            let { tableName, xAxis, yAxis, yAxes, limit, xMin, xMax, yMin, yMax, dateFrom, dateTo } = req.query;
+            let { tableName, xAxis, yAxis, yAxes, limit, xMin, xMax, yMin, yMax, dateFrom, dateTo, aggregateFunction } = req.query;
             // Remove default limit - return all records unless explicitly specified
             limit = limit ? parseInt(limit) : null;
+            // Default aggregateFunction to 'sum' if not provided
+            aggregateFunction = aggregateFunction || 'sum';
             
             // Require tableName parameter - use the selected view/table name
             if (!tableName) {
@@ -228,6 +230,28 @@ const registerChartDataRoutes = (app, { runQuery }) => {
                 selectFields.push(`${formatColumn(field, yAxisDataTypes[field])} as y_value_${index}`);
             });
             
+            // Helper function to map aggregateFunction to SQL function
+            const getAggregateSQL = (aggFunc, fieldExpr) => {
+                const normalizedAgg = (aggFunc || 'sum').toLowerCase();
+                switch (normalizedAgg) {
+                    case 'sum':
+                        return `SUM(TRY_CONVERT(float, ${fieldExpr}))`;
+                    case 'average':
+                    case 'avg':
+                        return `AVG(TRY_CONVERT(float, ${fieldExpr}))`;
+                    case 'count':
+                        return `COUNT(${fieldExpr})`;
+                    case 'maximum':
+                    case 'max':
+                        return `MAX(TRY_CONVERT(float, ${fieldExpr}))`;
+                    case 'minimum':
+                    case 'min':
+                        return `MIN(TRY_CONVERT(float, ${fieldExpr}))`;
+                    default:
+                        return `SUM(TRY_CONVERT(float, ${fieldExpr}))`;
+                }
+            };
+            
             let query;
             // If x-axis is ScheduledDate, return one row per distinct date within range
             if (xAxis === 'ScheduledDate') {
@@ -236,7 +260,7 @@ const registerChartDataRoutes = (app, { runQuery }) => {
                 if (yAxisFields.length > 0) {
                     yAxisFields.forEach((field, index) => {
                         const fExpr = exprForColumn(field);
-                        aggSelects.push(`SUM(TRY_CONVERT(float, ${fExpr})) as y_value_${index}`);
+                        aggSelects.push(`${getAggregateSQL(aggregateFunction, fExpr)} as y_value_${index}`);
                     });
                 } else {
                     aggSelects.push('COUNT(1) as y_value');
@@ -251,23 +275,48 @@ const registerChartDataRoutes = (app, { runQuery }) => {
                     ORDER BY x_value ASC
                 `;
             } else {
-                // Build query with optional limit
-                let limitClause = '';
-                if (limit && limit > 0) {
-                    limitClause = `OFFSET 0 ROWS FETCH NEXT ${limit} ROWS ONLY`;
+                // Check if we should apply aggregation (group by x-axis)
+                // Apply aggregation when aggregateFunction is provided and not 'none'
+                const shouldAggregate = aggregateFunction && aggregateFunction.toLowerCase() !== 'none';
+                
+                if (shouldAggregate) {
+                    // Group by x-axis and apply aggregation to y-axis fields
+                    const xExpr = formatColumn(xAxis, xAxisDataType);
+                    const aggSelects = [];
+                    
+                    yAxisFields.forEach((field, index) => {
+                        const fExpr = exprForColumn(field);
+                        aggSelects.push(`${getAggregateSQL(aggregateFunction, fExpr)} as y_value_${index}`);
+                    });
+                    
+                    query = `
+                        SELECT 
+                            ${xExpr} as x_value,
+                            ${aggSelects.join(', ')}
+                        FROM [${actualTableName.replace(/\]/g, ']]')}]
+                        WHERE ${whereClause}
+                        GROUP BY ${xExpr}
+                        ORDER BY x_value ASC
+                    `;
+                } else {
+                    // Build query with optional limit (no aggregation)
+                    let limitClause = '';
+                    if (limit && limit > 0) {
+                        limitClause = `OFFSET 0 ROWS FETCH NEXT ${limit} ROWS ONLY`;
+                    }
+                    query = `
+                        SELECT 
+                            ${selectFields.join(', ')}
+                        FROM [${actualTableName.replace(/\]/g, ']]')}]
+                        WHERE ${whereClause}
+                        ORDER BY (SELECT NULL)
+                        ${limitClause}
+                    `;
                 }
-                query = `
-                    SELECT 
-                        ${selectFields.join(', ')}
-                    FROM [${actualTableName.replace(/\]/g, ']]')}]
-                    WHERE ${whereClause}
-                    ORDER BY (SELECT NULL)
-                    ${limitClause}
-                `;
             }
             
             console.log('Executing query:', query);
-            console.log('Query parameters:', { tableName, actualTableName, xAxis, yAxis, yAxes, whereClause });
+            console.log('Query parameters:', { tableName, actualTableName, xAxis, yAxis, yAxes, aggregateFunction, whereClause });
             
             let data;
             try {

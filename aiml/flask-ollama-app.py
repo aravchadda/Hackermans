@@ -35,6 +35,7 @@ Do not put the same column name for xAxis and yAxis
 Already existing chart names are {existing_graphs} exactly.
 If the user asks to delete or update a chart, you should put plotName as one of the existing charts exactly, if none match put the plotName as unknown.
 For update and delete do not deviate from the existing chart names.
+The aggregateFunction field specifies how to aggregate the yAxis values. Use "sum", "average", "count", "maximum", or "minimum". If not specified, default to "sum".
 
 JSON template:
 {{
@@ -44,6 +45,7 @@ JSON template:
 "size": "small/medium/large",
 "xAxis": "<GrossQuantity/FlowRate/ShipmentCompartmentID/BaseProductID/BaseProductCode/ShipmentID/ShipmentCode/ExitTime/BayCode/ScheduledDate/CreatedTime>",
 "yAxis":  "<GrossQuantity/FlowRate/ShipmentCompartmentID/BaseProductID/BaseProductCode/ShipmentID/ShipmentCode/ExitTime/BayCode/ScheduledDate/CreatedTime>",
+"aggregateFunction": "sum/average/count/maximum/minimum",
 }}
 
 Chart type keywords:
@@ -66,7 +68,7 @@ Output:
 "size":  "small",
 "xAxis": "BayCode",
 "yAxis": "GrossQuantity",
-
+"aggregateFunction": "sum"
 }}
 
 Example2:
@@ -84,6 +86,20 @@ Output:
 "plotName": "base_product_code_chart",
 "operation": "update",
 "size": "large",
+"aggregateFunction": "sum"
+}}
+
+Example4:
+User: "Create a chart showing average flow rate by bay"
+Output:
+{{
+"plotName": "avg_flow_rate_chart",
+"operation": "create",
+"plotType": "bar",
+"size": "medium",
+"xAxis": "BayCode",
+"yAxis": "FlowRate",
+"aggregateFunction": "average"
 }}
 Remember: Return ONLY the JSON object, nothing else."""
 
@@ -427,7 +443,8 @@ def extract_json_manually(text):
             'plotType': r'plotType["\']?\s*:\s*["\']?([^",}\n]+)',
             'size': r'size["\']?\s*:\s*["\']?([^",}\n]+)',
             'xAxis': r'xAxis["\']?\s*:\s*["\']?([^",}\n]+)',
-            'yAxis': r'yAxis["\']?\s*:\s*["\']?([^",}\n]+)'
+            'yAxis': r'yAxis["\']?\s*:\s*["\']?([^",}\n]+)',
+            'aggregateFunction': r'aggregateFunction["\']?\s*:\s*["\']?([^",}\n]+)'
         }
         
         for field, pattern in field_patterns.items():
@@ -465,8 +482,18 @@ def validate_and_fix_json_structure(data):
     if 'size' in data:
         data['size'] = data['size'].lower()
     
+    # Ensure aggregateFunction is lowercase if present, default to 'sum' if empty
+    if 'aggregateFunction' in data:
+        if not data['aggregateFunction'] or data['aggregateFunction'].strip() == '':
+            data['aggregateFunction'] = 'sum'
+        else:
+            data['aggregateFunction'] = data['aggregateFunction'].lower()
+    else:
+        # Default to 'sum' if aggregateFunction is not provided
+        data['aggregateFunction'] = 'sum'
+    
     # Remove any extra fields that shouldn't be there
-    valid_fields = ['plotName', 'operation', 'plotType', 'size', 'xAxis', 'yAxis']
+    valid_fields = ['plotName', 'operation', 'plotType', 'size', 'xAxis', 'yAxis', 'aggregateFunction']
     keys_to_remove = [key for key in data.keys() if key not in valid_fields]
     for key in keys_to_remove:
         del data[key]
@@ -477,6 +504,10 @@ def validate_and_fix_json_structure(data):
         keys_to_remove = [key for key in data.keys() if key not in fields_to_keep]
         for key in keys_to_remove:
             del data[key]
+    else:
+        # For create and update operations, ensure aggregateFunction is set (default to 'sum')
+        if 'aggregateFunction' not in data or not data['aggregateFunction']:
+            data['aggregateFunction'] = 'sum'
     
     return data
 
@@ -517,6 +548,12 @@ def validate_graph_json(data):
         valid_sizes = ["small", "medium", "large"]
         if data["size"] not in valid_sizes:
             return False, f"Invalid size: {data['size']}"
+        
+        # Validate aggregateFunction
+        valid_aggregate_functions = ["sum", "average", "count", "maximum", "minimum"]
+        aggregate_function = data.get("aggregateFunction", "sum").lower()
+        if aggregate_function not in valid_aggregate_functions:
+            return False, f"Invalid aggregateFunction: {aggregate_function}. Must be one of: {', '.join(valid_aggregate_functions)}"
         
         # Validate that xAxis and yAxis are different
         if data.get("xAxis") == data.get("yAxis"):

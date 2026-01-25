@@ -194,10 +194,12 @@ const DashboardCanvas = forwardRef(({ mode, showChat, onCreateChart, onDeleteCha
                 ...(dateFrom ? { dateFrom } : {}),
                 ...(dateTo ? { dateTo } : {})
               };
+              // Use aggregateFunction if available, otherwise fall back to aggregation (for backward compatibility)
+              const aggFunc = item.config.aggregateFunction || item.config.aggregation || 'sum';
               
               const data = isMultiValue ? 
                 await fetchMultiValueChartData(xField, yFields, type, filters) :
-                await fetchChartData(xField, yField, type, filters);
+                await fetchChartData(xField, yField, type, filters, aggFunc);
               
               setChartData(prev => ({
                 ...prev,
@@ -259,7 +261,8 @@ const DashboardCanvas = forwardRef(({ mode, showChat, onCreateChart, onDeleteCha
           type: chartConfig.type,
           title: chartConfig.config.title,
           xField: chartConfig.config.xField,
-          yField: chartConfig.config.yField
+          yField: chartConfig.config.yField,
+          aggregateFunction: chartConfig.config.aggregateFunction
         });
         
         // Create a new chart item
@@ -269,6 +272,12 @@ const DashboardCanvas = forwardRef(({ mode, showChat, onCreateChart, onDeleteCha
           config: chartConfig.config,
           position: { x: 0, y: 0, w: 6, h: 4 } // Default position and size
         };
+        
+        console.log('New chart item created with config:', {
+          aggregateFunction: newChartItem.config.aggregateFunction,
+          aggregation: newChartItem.config.aggregation,
+          fullConfig: newChartItem.config
+        });
         
         // Add the new chart to the items
         setItems(prevItems => {
@@ -296,12 +305,14 @@ const DashboardCanvas = forwardRef(({ mode, showChat, onCreateChart, onDeleteCha
         });
         
         // Fetch data for the new chart
-        const { xField, yField, yFields, type } = chartConfig.config;
+        const { xField, yField, yFields, type, aggregateFunction } = chartConfig.config;
         if (xField && (yField || yFields)) {
           const isMultiValue = yFields && yFields.length > 1;
+          // Use aggregateFunction if available, otherwise fall back to aggregation (for backward compatibility)
+          const aggFunc = aggregateFunction || chartConfig.config.aggregation || 'sum';
           const fetchFunction = isMultiValue ? 
             fetchMultiValueChartData(xField, yFields, type, {}) :
-            fetchChartData(xField, yField, type, {});
+            fetchChartData(xField, yField, type, {}, aggFunc);
             
           fetchFunction
             .then(data => {
@@ -389,9 +400,11 @@ const DashboardCanvas = forwardRef(({ mode, showChat, onCreateChart, onDeleteCha
               try {
                 console.log(`Fetching data for ${item.id}: xField=${xField}, yField=${yField}, yFields=${yFields}, type=${type}`);
                 const isMultiValue = yFields && yFields.length > 1;
+                // Use aggregateFunction if available, otherwise fall back to aggregation (for backward compatibility)
+              const aggFunc = item.config.aggregateFunction || item.config.aggregation || 'sum';
                 const data = isMultiValue ? 
                   await fetchMultiValueChartData(xField, yFields, type, {}) :
-                  await fetchChartData(xField, yField, type, {});
+                  await fetchChartData(xField, yField, type, {}, aggFunc);
                 setChartData(prev => ({
                   ...prev,
                   [item.id]: data
@@ -432,9 +445,11 @@ const DashboardCanvas = forwardRef(({ mode, showChat, onCreateChart, onDeleteCha
                 try {
                   console.log(`Fetching data for ${item.id}: xField=${xField}, yField=${yField}, yFields=${yFields}, type=${type}`);
                   const isMultiValue = yFields && yFields.length > 1;
+                  // Use aggregateFunction if available, otherwise fall back to aggregation (for backward compatibility)
+              const aggFunc = item.config.aggregateFunction || item.config.aggregation || 'sum';
                   const data = isMultiValue ? 
                     await fetchMultiValueChartData(xField, yFields, type, {}) :
-                    await fetchChartData(xField, yField, type, {});
+                    await fetchChartData(xField, yField, type, {}, aggFunc);
                   setChartData(prev => ({
                     ...prev,
                     [item.id]: data
@@ -489,9 +504,10 @@ const DashboardCanvas = forwardRef(({ mode, showChat, onCreateChart, onDeleteCha
             }
             
             const isMultiValue = yFields && yFields.length > 1;
+            const aggFunc = item.config.aggregateFunction || 'sum';
             const data = isMultiValue ? 
               await fetchMultiValueChartData(xField, yFields, type, {}) :
-              await fetchChartData(xField, yField, type, {});
+              await fetchChartData(xField, yField, type, {}, aggFunc);
             setChartData(prev => ({
               ...prev,
               [item.id]: data
@@ -528,9 +544,41 @@ const DashboardCanvas = forwardRef(({ mode, showChat, onCreateChart, onDeleteCha
   // availableColumns is now loaded from database schema dynamically
 
 
+  // Helper function to map UI aggregation values to backend values
+  const mapAggregationToBackend = (aggValue) => {
+    const mapping = {
+      'sum': 'sum',
+      'avg': 'average',
+      'average': 'average',
+      'count': 'count',
+      'max': 'maximum',
+      'maximum': 'maximum',
+      'min': 'minimum',
+      'minimum': 'minimum'
+    };
+    return mapping[aggValue?.toLowerCase()] || 'sum';
+  };
+
+  // Helper function to map backend aggregation values to UI/BarChart format
+  const mapAggregationToChart = (aggValue) => {
+    const mapping = {
+      'sum': 'sum',
+      'average': 'avg',
+      'avg': 'avg',
+      'count': 'count',
+      'maximum': 'max',
+      'max': 'max',
+      'minimum': 'min',
+      'min': 'min'
+    };
+    return mapping[aggValue?.toLowerCase()] || 'sum';
+  };
+
   // Fetch chart data from backend with table name
-  const fetchChartData = async (xAxis, yAxis, chartType, filters = {}) => {
-    console.log('🚀 fetchChartData CALLED with:', { xAxis, yAxis, chartType, filters, selectedTable, tables });
+  const fetchChartData = async (xAxis, yAxis, chartType, filters = {}, aggregateFunction = 'sum') => {
+    // Map aggregation value to backend format
+    const backendAggFunc = mapAggregationToBackend(aggregateFunction);
+    console.log('🚀 fetchChartData CALLED with:', { xAxis, yAxis, chartType, filters, aggregateFunction, backendAggFunc, selectedTable, tables });
     try {
       setLoading(true);
       // Use selectedTable or fallback to first available table from schema
@@ -563,8 +611,8 @@ const DashboardCanvas = forwardRef(({ mode, showChat, onCreateChart, onDeleteCha
         if (dateTo) finalFilters.dateTo = dateTo;
       }
       
-      console.log('🚀 fetchChartData: Calling apiService.getChartData with:', { xAxis, yAxis, chartType, filters: finalFilters, tableToUse });
-      const data = await apiService.getChartData(xAxis, yAxis, chartType, null, finalFilters, tableToUse);
+      console.log('🚀 fetchChartData: Calling apiService.getChartData with:', { xAxis, yAxis, chartType, filters: finalFilters, aggregateFunction: backendAggFunc, tableToUse });
+      const data = await apiService.getChartData(xAxis, yAxis, chartType, null, finalFilters, tableToUse, backendAggFunc);
       console.log('🚀 fetchChartData: Received data:', data);
       return data;
     } catch (error) {
@@ -965,14 +1013,16 @@ const DashboardCanvas = forwardRef(({ mode, showChat, onCreateChart, onDeleteCha
       }
       
       // Fetch new data for the updated chart only if xAxis or yAxis changed
-      const needsDataRefresh = chartConfig.xAxis || chartConfig.yAxis || chartConfig.yAxes;
+      const needsDataRefresh = chartConfig.xAxis || chartConfig.yAxis || chartConfig.yAxes || chartConfig.aggregateFunction;
       if (needsDataRefresh && updatedChart.config.xField && (updatedChart.config.yField || updatedChart.config.yFields)) {
         try {
-          const { xField, yField, yFields, type } = updatedChart.config;
+          const { xField, yField, yFields, type, aggregateFunction } = updatedChart.config;
           const isMultiValue = yFields && yFields.length > 1;
+          // Use aggregateFunction if available, otherwise fall back to aggregation (for backward compatibility)
+          const aggFunc = aggregateFunction || updatedChart.config.aggregation || 'sum';
           const data = isMultiValue ? 
             await fetchMultiValueChartData(xField, yFields, type, {}) :
-            await fetchChartData(xField, yField, type, {});
+            await fetchChartData(xField, yField, type, {}, aggFunc);
           setChartData(prev => ({
             ...prev,
             [chartToUpdate.id]: data
@@ -1087,9 +1137,9 @@ const DashboardCanvas = forwardRef(({ mode, showChat, onCreateChart, onDeleteCha
       isMultiValue: hasMultipleYFields,
       yFields: hasMultipleYFields ? currentYFields : null,
       seriesLabels: hasMultipleYFields ? currentYFields : null,
-      // Aggregation for bar charts
+      // Aggregation for bar charts - map to BarChart component format
       ...(item.type === 'bar' && {
-        aggregation: item.config.aggregation || 'sum'
+        aggregation: mapAggregationToChart(item.config.aggregateFunction || item.config.aggregation || 'sum')
       }),
       ...(item.type === 'pie' && {
         labelField: 'x_value',
@@ -1418,10 +1468,19 @@ const DashboardCanvas = forwardRef(({ mode, showChat, onCreateChart, onDeleteCha
                           Aggregation
                         </label>
                         <select
-                          value={item.config.aggregation || 'sum'}
+                          value={mapAggregationToChart(item.config.aggregateFunction || item.config.aggregation || 'sum')}
                           onChange={(e) => {
                             console.log('Aggregation changed:', e.target.value);
-                            handleItemConfig(item.id, { aggregation: e.target.value });
+                            // Map UI value back to backend format for storage
+                            const backendValue = e.target.value === 'avg' ? 'average' :
+                                                 e.target.value === 'max' ? 'maximum' :
+                                                 e.target.value === 'min' ? 'minimum' :
+                                                 e.target.value;
+                            // Update both aggregation (for backward compatibility) and aggregateFunction
+                            handleItemConfig(item.id, { 
+                              aggregation: e.target.value,
+                              aggregateFunction: backendValue 
+                            });
                           }}
                           className="w-full px-3 py-2 text-sm border border-slate-200 dark:border-slate-600 rounded-md focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 transition-all duration-200"
                         >
@@ -1487,9 +1546,11 @@ const DashboardCanvas = forwardRef(({ mode, showChat, onCreateChart, onDeleteCha
                         ...(dateTimeColumn && dateFrom ? { dateFrom } : {}),
                         ...(dateTimeColumn && dateTo ? { dateTo } : {})
                       };
+                      // Use aggregateFunction if available, otherwise fall back to aggregation (for backward compatibility)
+                      const aggFunc = item.config.aggregateFunction || item.config.aggregation || 'sum';
                       const data = isMultiValue ? 
                         await apiService.getMultiValueChartData(xField, yFields, type, null, filters, selectedTable) :
-                        await apiService.getChartData(xField, yField, type, null, filters, selectedTable);
+                        await apiService.getChartData(xField, yField, type, null, filters, selectedTable, aggFunc);
                       setChartData(prev => ({
                         ...prev,
                         [item.id]: data

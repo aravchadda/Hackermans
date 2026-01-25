@@ -39,7 +39,7 @@ const ChatBox = ({ isVisible, onClose, onCreateChart, onDeleteChart, onUpdateCha
       const response = await apiService.sendChatbotQuery(inputText, existingCharts);
       console.log('Chatbot API response:', response);
       
-      if (response) {
+        if (response) {
         // Handle different operations
         if (response.operation === 'create' && onCreateChart) {
           const chartConfig = {
@@ -49,7 +49,8 @@ const ChatBox = ({ isVisible, onClose, onCreateChart, onDeleteChart, onUpdateCha
               xField: response.xAxis,
               yField: response.yAxis,
               title: response.plotName,
-              height: response.size === 'small' ? 300 : response.size === 'large' ? 400 : 350
+              height: response.size === 'small' ? 300 : response.size === 'large' ? 400 : 350,
+              aggregateFunction: response.aggregateFunction || 'sum'
             }
           };
           
@@ -76,6 +77,9 @@ const ChatBox = ({ isVisible, onClose, onCreateChart, onDeleteChart, onUpdateCha
           if (response.size !== undefined && response.size !== null) {
             chartConfig.size = response.size;
           }
+          if (response.aggregateFunction !== undefined && response.aggregateFunction !== null) {
+            chartConfig.aggregateFunction = response.aggregateFunction;
+          }
           
           console.log('Calling onUpdateChart with config:', chartConfig);
           console.log('Fields provided in update:', Object.keys(chartConfig));
@@ -85,7 +89,8 @@ const ChatBox = ({ isVisible, onClose, onCreateChart, onDeleteChart, onUpdateCha
         // Create appropriate response message based on operation
         let responseText;
         if (response.operation === 'create') {
-          responseText = `I've created a ${response.plotType} chart named "${response.plotName}" with ${response.xAxis} on X-axis and ${response.yAxis} on Y-axis. Size: ${response.size}`;
+          const aggFunc = response.aggregateFunction || 'sum';
+          responseText = `I've created a ${response.plotType} chart named "${response.plotName}" with ${response.xAxis} on X-axis and ${response.yAxis} on Y-axis. Size: ${response.size}, Aggregation: ${aggFunc}`;
         } else if (response.operation === 'delete') {
           responseText = `I've deleted the chart named "${response.plotName}".`;
         } else if (response.operation === 'update') {
@@ -103,6 +108,9 @@ const ChatBox = ({ isVisible, onClose, onCreateChart, onDeleteChart, onUpdateCha
           }
           if (response.size !== undefined && response.size !== null) {
             updateParts.push(`size to ${response.size}`);
+          }
+          if (response.aggregateFunction !== undefined && response.aggregateFunction !== null) {
+            updateParts.push(`aggregation to ${response.aggregateFunction}`);
           }
           
           if (updateParts.length > 0) {

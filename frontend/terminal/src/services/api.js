@@ -77,9 +77,9 @@ export const apiService = {
   // Get available columns for chart axes
 
   // Get chart data based on x and y axes - now supports any table
-  async getChartData(xAxis, yAxis, chartType, limit = null, filters = {}, tableName) {
+  async getChartData(xAxis, yAxis, chartType, limit = null, filters = {}, tableName, aggregateFunction = 'sum') {
     try {
-      console.log('getChartData called with:', { xAxis, yAxis, chartType, limit, filters, tableName });
+      console.log('getChartData called with:', { xAxis, yAxis, chartType, limit, filters, tableName, aggregateFunction });
       
       if (!tableName) {
         console.error('getChartData: tableName is required but was not provided');
@@ -95,7 +95,8 @@ export const apiService = {
       const params = {
         tableName,
         xAxis,
-        yAxis
+        yAxis,
+        aggregateFunction: aggregateFunction || 'sum'
       };
       
       // Only add limit if explicitly provided
