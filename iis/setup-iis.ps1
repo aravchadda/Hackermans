@@ -56,16 +56,39 @@ foreach ($feature in $features) {
 
 # Check for URL Rewrite module
 $rewriteModule = Get-WebGlobalModule -Name "RewriteModule" -ErrorAction SilentlyContinue
+$rewriteModuleInstalled = $false
 if (-not $rewriteModule) {
     Write-Host ""
     Write-Host "[WARNING] URL Rewrite module not found!" -ForegroundColor Yellow
     Write-Host "Please download and install URL Rewrite 2.1 from:" -ForegroundColor Yellow
     Write-Host "https://www.iis.net/downloads/microsoft/url-rewrite" -ForegroundColor Cyan
     Write-Host ""
+    Write-Host "[INFO] Will use minimal web.config without rewrite rules" -ForegroundColor Yellow
+    Write-Host "  (API proxying and SPA routing will not work without URL Rewrite)" -ForegroundColor Yellow
+    Write-Host ""
     $continue = Read-Host "Continue anyway? (y/n)"
     if ($continue -ne "y") {
         exit 1
     }
+} else {
+    $rewriteModuleInstalled = $true
+    Write-Host "  [OK] URL Rewrite module found" -ForegroundColor Green
+}
+
+# Check for Application Request Routing (ARR) module (required for reverse proxy)
+Write-Host ""
+Write-Host "[INFO] Checking for Application Request Routing (ARR) module..." -ForegroundColor Cyan
+$arrModule = Get-WebGlobalModule -Name "ApplicationRequestRouting" -ErrorAction SilentlyContinue
+$arrModuleInstalled = $false
+if (-not $arrModule) {
+    Write-Host "  [WARNING] Application Request Routing (ARR) module not found!" -ForegroundColor Yellow
+    Write-Host "  Reverse proxy functionality requires ARR." -ForegroundColor Yellow
+    Write-Host "  Please download and install ARR 3.0 from:" -ForegroundColor Yellow
+    Write-Host "  https://www.iis.net/downloads/microsoft/application-request-routing" -ForegroundColor Cyan
+    Write-Host "  Will use web.config without reverse proxy rules" -ForegroundColor Yellow
+} else {
+    $arrModuleInstalled = $true
+    Write-Host "  [OK] ARR module found" -ForegroundColor Green
 }
 
 # Check for iisnode module
@@ -218,8 +241,54 @@ if (Get-Website -Name "${SiteName}-Frontend" -ErrorAction SilentlyContinue) {
     Write-Host "  Removed existing site: ${SiteName}-Frontend" -ForegroundColor Yellow
 }
 
-# Copy web.config to build directory
-Copy-Item (Join-Path $frontendIISPath "web.config") -Destination $frontendBuildPath -Force
+# Copy web.config to build directory (use appropriate version based on installed modules)
+if ($rewriteModuleInstalled -and $arrModuleInstalled) {
+    # Full version with reverse proxy
+    Copy-Item (Join-Path $frontendIISPath "web.config") -Destination $frontendBuildPath -Force
+    Write-Host "  [OK] Copied web.config with URL Rewrite and ARR (reverse proxy enabled)" -ForegroundColor Green
+} elseif ($rewriteModuleInstalled) {
+    # Version without ARR (no reverse proxy, but SPA routing works)
+    $noArrConfig = Join-Path $frontendIISPath "web.config.no-arr"
+    if (Test-Path $noArrConfig) {
+        Copy-Item $noArrConfig -Destination (Join-Path $frontendBuildPath "web.config") -Force
+        Write-Host "  [OK] Copied web.config without ARR (SPA routing works, but no reverse proxy)" -ForegroundColor Yellow
+        Write-Host "  [INFO] Frontend will need to call APIs directly (http://localhost:8080/api/...)" -ForegroundColor Yellow
+    } else {
+        Copy-Item (Join-Path $frontendIISPath "web.config") -Destination $frontendBuildPath -Force
+        Write-Host "  [WARNING] Using full web.config but ARR not installed - may cause errors" -ForegroundColor Yellow
+    }
+} else {
+    # Minimal version without any rewrite rules
+    $minimalConfig = Join-Path $frontendIISPath "web.config.minimal"
+    if (Test-Path $minimalConfig) {
+        Copy-Item $minimalConfig -Destination (Join-Path $frontendBuildPath "web.config") -Force
+        Write-Host "  [OK] Copied minimal web.config (URL Rewrite not available)" -ForegroundColor Yellow
+    } else {
+        Write-Host "  [WARNING] Minimal web.config not found, creating basic version..." -ForegroundColor Yellow
+        # Create a basic web.config without rewrite rules
+        $basicConfig = @"
+<?xml version="1.0" encoding="UTF-8"?>
+<configuration>
+  <system.webServer>
+    <staticContent>
+      <mimeMap fileExtension=".json" mimeType="application/json" />
+    </staticContent>
+    <defaultDocument>
+      <files>
+        <clear />
+        <add value="index.html" />
+      </files>
+    </defaultDocument>
+    <httpErrors errorMode="Custom" existingResponse="Replace">
+      <remove statusCode="404" />
+      <error statusCode="404" path="/index.html" responseMode="ExecuteURL" />
+    </httpErrors>
+  </system.webServer>
+</configuration>
+"@
+        Set-Content -Path (Join-Path $frontendBuildPath "web.config") -Value $basicConfig
+    }
+}
 
 New-Website -Name "${SiteName}-Frontend" `
     -Port $FrontendPort `

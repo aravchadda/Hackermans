@@ -111,7 +111,7 @@ const AreaChart = ({
                     totalValues: values.length
                 });
 
-                datasets.push({
+                const dataset = {
                     label: fieldLabel,
                     data: values,
                     borderColor: lineColors[index % lineColors.length],
@@ -126,7 +126,14 @@ const AreaChart = ({
                     pointHoverBackgroundColor: lineColors[index % lineColors.length],
                     pointHoverBorderColor: '#ffffff',
                     pointHoverBorderWidth: 3,
-                });
+                };
+                
+                // If there are exactly 2 series, use dual y-axes: first on left, second on right
+                if (yValueFields.length === 2 && index === 1) {
+                    dataset.yAxisID = 'y1';
+                }
+                
+                datasets.push(dataset);
             });
 
             // Use x_value for labels
@@ -155,7 +162,7 @@ const AreaChart = ({
                 const values = data.map(item => parseFloat(item[fieldName]) || 0);
                 const fieldLabel = seriesLabels && seriesLabels[index] ? seriesLabels[index] : fieldName;
 
-                datasets.push({
+                const dataset = {
                     label: fieldLabel,
                     data: values,
                     borderColor: lineColors[index % lineColors.length],
@@ -170,7 +177,14 @@ const AreaChart = ({
                     pointHoverBackgroundColor: lineColors[index % lineColors.length],
                     pointHoverBorderColor: '#ffffff',
                     pointHoverBorderWidth: 3,
-                });
+                };
+                
+                // If there are exactly 2 series, use dual y-axes: first on left, second on right
+                if (yFields.length === 2 && index === 1) {
+                    dataset.yAxisID = 'y1';
+                }
+                
+                datasets.push(dataset);
             });
 
             return {
@@ -207,6 +221,16 @@ const AreaChart = ({
             };
         }
     }, [data, xField, yField, yFields, seriesLabels, isMultiValue, multiValue, xFieldLabel, yFieldLabel]);
+
+    // Determine if we have exactly 2 datasets for dual y-axes
+    const hasDualYAxes = useMemo(() => {
+        if (!data || data.length === 0) return false;
+        const firstItem = data[0];
+        const yValueFields = Object.keys(firstItem).filter(key => key.startsWith('y_value_'));
+        if ((multiValue || isMultiValue) && yValueFields.length === 2) return true;
+        if (yFields && yFields.length === 2) return true;
+        return false;
+    }, [data, multiValue, isMultiValue, yFields]);
 
     const chartOptions = useMemo(() => {
         const baseOptions = {
@@ -280,9 +304,16 @@ const AreaChart = ({
                 },
                 y: {
                     display: true,
+                    position: 'left',
                     title: {
                         display: true,
-                        text: yFieldLabel || yField || 'Y Axis',
+                        text: (() => {
+                            // If dual y-axes, use first series label; otherwise use provided label
+                            if (hasDualYAxes && seriesLabels && seriesLabels.length >= 1) {
+                                return seriesLabels[0] || yFieldLabel || yField || 'Y Axis (Left)';
+                            }
+                            return yFieldLabel || yField || 'Y Axis';
+                        })(),
                         color: isDarkMode ? '#e5e7eb' : '#374151',
                         font: {
                             size: 12,
@@ -300,7 +331,39 @@ const AreaChart = ({
                         color: isDarkMode ? 'rgba(75, 85, 99, 0.3)' : 'rgba(209, 213, 219, 0.3)',
                         drawBorder: false
                     }
-                }
+                },
+                ...(hasDualYAxes && {
+                    y1: {
+                        type: 'linear',
+                        position: 'right',
+                        display: true,
+                        beginAtZero: true,
+                        grid: {
+                            drawOnChartArea: false, // Don't draw grid lines for right axis to avoid overlap
+                        },
+                        ticks: {
+                            color: isDarkMode ? '#9ca3af' : '#6b7280',
+                            font: {
+                                size: 11
+                            }
+                        },
+                        title: {
+                            display: true,
+                            text: (() => {
+                                // Use second series label for right axis
+                                if (seriesLabels && seriesLabels.length >= 2) {
+                                    return seriesLabels[1] || 'Y Axis (Right)';
+                                }
+                                return 'Y Axis (Right)';
+                            })(),
+                            color: isDarkMode ? '#e5e7eb' : '#374151',
+                            font: {
+                                size: 12,
+                                weight: 'bold'
+                            }
+                        }
+                    }
+                })
             },
             interaction: {
                 intersect: false,
@@ -315,7 +378,7 @@ const AreaChart = ({
         };
 
         return baseOptions;
-    }, [title, showLegend, isDarkMode, xField, yField, xFieldLabel, yFieldLabel]);
+    }, [title, showLegend, isDarkMode, xField, yField, xFieldLabel, yFieldLabel, hasDualYAxes, seriesLabels]);
 
     if (!chartData) {
         return (

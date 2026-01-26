@@ -159,7 +159,7 @@ const BarChart = ({
                     sampleValues: values.slice(0, 10) // Show first 10 for debugging
                 });
 
-                datasets.push({
+                const dataset = {
                     label: fieldLabel,
                     data: values,
                     backgroundColor: colors[index % colors.length],
@@ -167,7 +167,14 @@ const BarChart = ({
                     borderWidth: 2,
                     borderRadius: 4,
                     borderSkipped: false,
-                });
+                };
+                
+                // If there are exactly 2 series, use dual y-axes: first on left, second on right
+                if (yValueFields.length === 2 && index === 1) {
+                    dataset.yAxisID = 'y1';
+                }
+                
+                datasets.push(dataset);
             });
             
             const chartData = {
@@ -223,7 +230,7 @@ const BarChart = ({
                     sampleValues: values.slice(0, 10) // Show first 10 for debugging
                 });
 
-                datasets.push({
+                const dataset = {
                     label: seriesLabels && seriesLabels[index] ? seriesLabels[index] : yFieldName,
                     data: values,
                     backgroundColor: colors[index % colors.length],
@@ -231,7 +238,14 @@ const BarChart = ({
                     borderWidth: 2,
                     borderRadius: 4,
                     borderSkipped: false,
-                });
+                };
+                
+                // If there are exactly 2 series, use dual y-axes: first on left, second on right
+                if (yFields.length === 2 && index === 1) {
+                    dataset.yAxisID = 'y1';
+                }
+                
+                datasets.push(dataset);
             });
             
             const chartData = {
@@ -278,8 +292,18 @@ const BarChart = ({
         }
     }, [data, xField, yField, yFieldLabel, isDarkMode, multiValue, isMultiValue, yFields, seriesLabels, aggregation]);
 
+    // Determine if we have exactly 2 datasets for dual y-axes
+    const hasDualYAxes = useMemo(() => {
+        if (!data || data.length === 0) return false;
+        const firstItem = data[0];
+        const yValueFields = Object.keys(firstItem).filter(key => key.startsWith('y_value_'));
+        if ((multiValue || isMultiValue) && yValueFields.length === 2) return true;
+        if (yFields && yFields.length === 2) return true;
+        return false;
+    }, [data, multiValue, isMultiValue, yFields]);
+
     console.log(isDarkMode)
-    const options = {
+    const options = useMemo(() => ({
         responsive: true,
         maintainAspectRatio: false,
         layout: {
@@ -313,6 +337,7 @@ const BarChart = ({
         scales: {
             y: {
                 beginAtZero: true,
+                position: 'left',
                 grid: { 
                     color: 'rgba(148, 163, 184, 0.15)',
                     drawBorder: false,
@@ -325,12 +350,46 @@ const BarChart = ({
                 },
                 title: {
                     display: true,
-                    text: yFieldLabel || yField || 'Y Axis',
+                    text: (() => {
+                        // If dual y-axes, use first series label; otherwise use provided label
+                        if (hasDualYAxes && seriesLabels && seriesLabels.length >= 1) {
+                            return seriesLabels[0] || yFieldLabel || yField || 'Y Axis (Left)';
+                        }
+                        return yFieldLabel || yField || 'Y Axis';
+                    })(),
                     font: { size: 12, weight: 'bold' },
                     color: isDarkMode ? '#ffffff' : '#000000', // ✅ Y-axis title
                     padding: { top: 5, bottom: 5 }
                 }
             },
+            ...(hasDualYAxes && {
+                y1: {
+                    type: 'linear',
+                    position: 'right',
+                    beginAtZero: true,
+                    grid: {
+                        drawOnChartArea: false, // Don't draw grid lines for right axis to avoid overlap
+                    },
+                    ticks: {
+                        padding: 8,
+                        font: { size: 11, weight: '500' },
+                        color: isDarkMode ? '#ffffff' : '#000000'
+                    },
+                    title: {
+                        display: true,
+                        text: (() => {
+                            // Use second series label for right axis
+                            if (seriesLabels && seriesLabels.length >= 2) {
+                                return seriesLabels[1] || 'Y Axis (Right)';
+                            }
+                            return 'Y Axis (Right)';
+                        })(),
+                        font: { size: 12, weight: 'bold' },
+                        color: isDarkMode ? '#ffffff' : '#000000',
+                        padding: { top: 5, bottom: 5 }
+                    }
+                }
+            }),
             x: {
                 grid: { 
                     color: 'rgba(148, 163, 184, 0.15)',
@@ -355,7 +414,7 @@ const BarChart = ({
                 }
             }
         }
-    };
+    }), [title, showLegend, isDarkMode, xField, yField, xFieldLabel, yFieldLabel, hasDualYAxes, seriesLabels]);
     
 
     if (!chartData) {

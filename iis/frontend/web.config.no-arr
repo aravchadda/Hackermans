@@ -1,0 +1,56 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<configuration>
+  <system.webServer>
+    <!-- URL Rewrite Rules -->
+    <!-- NOTE: This version works without ARR, but reverse proxy requires ARR -->
+    <!-- For full reverse proxy functionality, install Application Request Routing (ARR) -->
+    <rewrite>
+      <rules>
+        <!-- Serve React app for all requests (SPA routing) -->
+        <!-- API proxying requires ARR - frontend will need to call APIs directly -->
+        <rule name="React App" stopProcessing="true">
+          <match url=".*" />
+          <conditions logicalGrouping="MatchAll">
+            <add input="{REQUEST_FILENAME}" matchType="IsFile" negate="true" />
+            <add input="{REQUEST_FILENAME}" matchType="IsDirectory" negate="true" />
+          </conditions>
+          <action type="Rewrite" url="/index.html" />
+        </rule>
+      </rules>
+    </rewrite>
+    
+    <!-- Static file handling -->
+    <staticContent>
+      <mimeMap fileExtension=".json" mimeType="application/json" />
+      <mimeMap fileExtension=".woff" mimeType="application/font-woff" />
+      <mimeMap fileExtension=".woff2" mimeType="application/font-woff2" />
+    </staticContent>
+    
+    <!-- Default documents -->
+    <defaultDocument>
+      <files>
+        <clear />
+        <add value="index.html" />
+      </files>
+    </defaultDocument>
+    
+    <!-- HTTP Error handling -->
+    <httpErrors errorMode="Custom" existingResponse="Replace">
+      <remove statusCode="404" />
+      <error statusCode="404" path="/index.html" responseMode="ExecuteURL" />
+    </httpErrors>
+    
+    <!-- Compression -->
+    <urlCompression doStaticCompression="true" doDynamicCompression="true" />
+    
+    <!-- Security headers -->
+    <httpProtocol>
+      <customHeaders>
+        <add name="X-Content-Type-Options" value="nosniff" />
+        <add name="X-Frame-Options" value="SAMEORIGIN" />
+        <add name="X-XSS-Protection" value="1; mode=block" />
+      </customHeaders>
+    </httpProtocol>
+  </system.webServer>
+</configuration>
+

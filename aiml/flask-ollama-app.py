@@ -118,12 +118,13 @@ The table named `shipments` contains the following columns:
 3. **Format:** Return *only* the SQL query. Do not use Markdown code blocks (```sql). Do not include explanations.
 4. **Logic:** Use appropriate aggregation, `GROUP BY`, and `ORDER BY` clauses to answer the specific question.
 5. **Row Limits:** Do NOT use `LIMIT`. Use `TOP` at the start of the SELECT statement (e.g., `SELECT TOP 10 *...`).
-6. **Syntax Constraints:**
-   - Use `GETDATE()` instead of `NOW()`.
+6. **Time:** Do not ever try to use the current date or time in the query.
+7. **Syntax Constraints:**
+   - Never use `GETDATE()` or `NOW()` functions.
    - Use `DATEDIFF(unit, start_date, end_date)` for time differences.
    - Use `+` or `CONCAT()` for string concatenation. Do NOT use `||`.
    - Avoid using the `YEAR(date)` function if the column is a string; cast it first or use `SUBSTRING`.
-7. **Identifiers:** Do NOT use backticks (`). If an identifier requires quoting, use square brackets `[]`.
+8. **Identifiers:** Do NOT use backticks (`). If an identifier requires quoting, use square brackets `[]`.
 
 ### Few-Shot Examples
 Refer to these examples to understand how to map business questions to SQL logic:

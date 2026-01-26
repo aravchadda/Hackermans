@@ -186,7 +186,7 @@ const LineChart = ({
                     });
                     
                     const fieldLabel = seriesLabels && seriesLabels[index] ? seriesLabels[index] : `Series ${index + 1}`;
-                    return {
+                    const dataset = {
                         label: fieldLabel,
                         data: dataPoints,
                         borderColor: lineColors[index % lineColors.length],
@@ -200,6 +200,13 @@ const LineChart = ({
                         fill: fillArea,
                         tension: 0.4,
                     };
+                    
+                    // If there are exactly 2 series, use dual y-axes: first on left, second on right
+                    if (yValueFields.length === 2 && index === 1) {
+                        dataset.yAxisID = 'y1';
+                    }
+                    
+                    return dataset;
                 });
                 return { labels: isTimeScale ? undefined : processedData.map(item => item['x_value'] || 'Unknown'), datasets };
             }
@@ -247,6 +254,16 @@ const LineChart = ({
         }
     }, [data, xField, yField, yFieldLabel, fillArea, isDarkMode, multiValue, isMultiValue, yFields, seriesLabels]);
 
+    // Determine if we have exactly 2 datasets for dual y-axes
+    const hasDualYAxes = useMemo(() => {
+        if (!data || data.length === 0) return false;
+        const firstItem = data[0];
+        const yValueFields = Object.keys(firstItem).filter(key => key.startsWith('y_value_'));
+        if ((multiValue || isMultiValue) && yValueFields.length === 2) return true;
+        if (yFields && yFields.length === 2) return true;
+        return false;
+    }, [data, multiValue, isMultiValue, yFields]);
+
     // Derive labels and intelligent axis settings to avoid overlap
     const xLabels = useMemo(() => {
         if (!data || !Array.isArray(data) || data.length === 0) return [];
@@ -289,7 +306,10 @@ const LineChart = ({
         return 16;
     }, [xLabels]);
 
-    const options = {
+    // Determine if we have exactly 2 datasets for dual y-axes
+
+
+    const options = useMemo(() => ({
         responsive: true,
         maintainAspectRatio: false,
         layout: {
@@ -322,6 +342,7 @@ const LineChart = ({
         scales: {
             y: {
                 beginAtZero: true,
+                position: 'left',
                 grid: { 
                     color: 'rgba(148, 163, 184, 0.15)',
                     drawBorder: false,
@@ -334,12 +355,46 @@ const LineChart = ({
                 },
                 title: {
                     display: true,
-                    text: yFieldLabel || yField || 'Y Axis',
+                    text: (() => {
+                        // If dual y-axes, use first series label; otherwise use provided label
+                        if (hasDualYAxes && seriesLabels && seriesLabels.length >= 1) {
+                            return seriesLabels[0] || yFieldLabel || yField || 'Y Axis (Left)';
+                        }
+                        return yFieldLabel || yField || 'Y Axis';
+                    })(),
                     font: { size: 12, weight: 'bold' },
                     color: isDarkMode ? 'rgba(255, 255, 255, 0.9)' : 'rgba(0, 0, 0, 0.9)',
                     padding: { top: 5, bottom: 5 }
                 }
             },
+            ...(hasDualYAxes && {
+                y1: {
+                    type: 'linear',
+                    position: 'right',
+                    beginAtZero: true,
+                    grid: {
+                        drawOnChartArea: false, // Don't draw grid lines for right axis to avoid overlap
+                    },
+                    ticks: {
+                        padding: 8,
+                        font: { size: 11, weight: '500' },
+                        color: isDarkMode ? 'rgba(255, 255, 255, 0.9)' : 'rgba(0, 0, 0, 0.9)'
+                    },
+                    title: {
+                        display: true,
+                        text: (() => {
+                            // Use second series label for right axis
+                            if (seriesLabels && seriesLabels.length >= 2) {
+                                return seriesLabels[1] || 'Y Axis (Right)';
+                            }
+                            return 'Y Axis (Right)';
+                        })(),
+                        font: { size: 12, weight: 'bold' },
+                        color: isDarkMode ? 'rgba(255, 255, 255, 0.9)' : 'rgba(0, 0, 0, 0.9)',
+                        padding: { top: 5, bottom: 5 }
+                    }
+                }
+            }),
             x: {
                 type: 'time',
                 time: {
@@ -413,7 +468,7 @@ const LineChart = ({
                 }
             }
         }
-    };
+    }), [title, showLegend, isDarkMode, xField, yField, xFieldLabel, yFieldLabel, hasDualYAxes, seriesLabels, timeUnit, xMaxTicks]);
 
     if (!chartData) {
         return (
